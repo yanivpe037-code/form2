@@ -319,6 +319,57 @@
     }
     .tb-zero-list li { padding: 3px 0; border-bottom: 1px solid #f1f5f9; break-inside: avoid; }
     .tb-zero-list li:last-child { border-bottom: none; }
+
+    /* ── Sheet selector ──────────────────────────────────── */
+    #sheet-wrap { align-items: center; gap: 6px; }
+    #sheet-wrap label { font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
+    #sheet-select {
+      font-family: inherit; font-size: 0.88rem; padding: 7px 10px;
+      border: none; border-radius: 6px; min-width: 200px;
+      background: #e0e7ff; color: #1e3a8a; font-weight: 700;
+      direction: rtl; cursor: pointer; outline: none;
+    }
+    .sheet-divider { color: rgba(255,255,255,0.35); font-size: 1.2rem; margin: 0 4px; }
+
+    /* ── Generic sheet table ─────────────────────────────── */
+    #generic-view .panel-header { background: #4f46e5; }
+    #generic-container { overflow-x: auto; }
+    .gen-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; direction: rtl; }
+    .gen-table thead th {
+      padding: 7px 8px; text-align: center;
+      background: #f8fafc; border-bottom: 2px solid #e2e8f0;
+      font-weight: 700; font-size: 0.7rem; color: #374151;
+      white-space: nowrap;
+    }
+    .gen-table thead th.gen-th-label { text-align: right; min-width: 220px; padding-right: 10px; }
+    .gen-table thead th.gen-th-num  { min-width: 100px; }
+    .gen-table tbody td { padding: 5px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .gen-table tbody td.gen-td-label { text-align: right; font-weight: 500; padding-right: 10px; }
+    .gen-table tbody td.gen-td-num  {
+      text-align: left; font-variant-numeric: tabular-nums;
+      white-space: nowrap; direction: ltr; padding-left: 10px;
+    }
+    .gen-table tbody td.gen-td-null { color: #d1d5db; text-align: center; }
+    .gen-table tbody tr:hover { background: #f0f9ff; }
+    /* Subtotal */
+    .gen-table tr.gen-subtotal td {
+      background: #f0fdf4; font-weight: 700; color: #166534;
+      border-top: 1px solid #bbf7d0; border-bottom: 1px solid #bbf7d0;
+    }
+    /* Result positive (עודף) */
+    .gen-table tr.gen-result-pos td {
+      background: #f0fdf4; font-weight: 800; color: #166534;
+      border-top: 2px solid #bbf7d0; font-size: 0.82rem;
+    }
+    /* Result negative (גרעון) */
+    .gen-table tr.gen-result-neg td {
+      background: #fff1f2; font-weight: 800; color: #9f1239;
+      border-top: 2px solid #fecdd3; font-size: 0.82rem;
+    }
+    /* Percentage / ratio rows */
+    .gen-table tr.gen-pct-row td { font-size: 0.72rem; color: #6b7280; }
+    /* Empty state */
+    #generic-empty { text-align: center; padding: 40px; color: #94a3b8; font-size: 0.9rem; }
   </style>
 </head>
 <body>
@@ -336,6 +387,11 @@
         <option value="">— בחר רשות —</option>
       </select>
     </div>
+    <span class="sheet-divider" id="sheet-divider" style="display:none">|</span>
+    <div id="sheet-wrap" style="display:none">
+      <label for="sheet-select">גיליון:</label>
+      <select id="sheet-select"></select>
+    </div>
   </div>
 </header>
 
@@ -346,9 +402,11 @@
   <div id="report">
     <div class="report-title">
       <h2 id="report-title-text"></h2>
-      <p>נתוני ביצוע | שנת דוח <span id="year-cur-label">—</span> | יחידות: אלפי ש"ח | דירוג מתוך <span id="n-munis">—</span> רשויות</p>
+      <p id="report-subtitle">נתוני ביצוע | שנת דוח <span id="year-cur-label">—</span> | יחידות: אלפי ש"ח | דירוג מתוך <span id="n-munis">—</span> רשויות</p>
     </div>
 
+    <!-- ── Form2 view (receipts + payments) ─────────────── -->
+    <div id="form2-view">
     <div class="panels">
       <!-- RECEIPTS — right panel -->
       <div class="panel panel-receipts">
@@ -430,7 +488,19 @@
         </tbody>
       </table>
     </div>
-  </div>
+    </div><!-- /form2-view -->
+
+    <!-- ── Generic sheet view ───────────────────────────── -->
+    <div id="generic-view" style="display:none">
+      <div class="panel">
+        <div class="panel-header" id="generic-panel-header">גיליון</div>
+        <div id="generic-container">
+          <div id="generic-empty">בחר רשות וגיליון להצגת הנתונים</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /report -->
 </main>
 
 <!-- Top/Bottom modal -->
@@ -442,19 +512,37 @@
 </div>
 
 <script>
-  const muniSearch  = document.getElementById('muni-search');
-  const muniSelect  = document.getElementById('muni-select');
-  const placeholder = document.getElementById('placeholder');
-  const loading     = document.getElementById('loading');
-  const report      = document.getElementById('report');
+  const muniSearch   = document.getElementById('muni-search');
+  const muniSelect   = document.getElementById('muni-select');
+  const sheetSelect  = document.getElementById('sheet-select');
+  const sheetWrap    = document.getElementById('sheet-wrap');
+  const sheetDivider = document.getElementById('sheet-divider');
+  const placeholder  = document.getElementById('placeholder');
+  const loading      = document.getElementById('loading');
+  const report       = document.getElementById('report');
+  const form2View    = document.getElementById('form2-view');
+  const genericView  = document.getElementById('generic-view');
 
   let municipalities = [];
+  let currentMuni    = null;
+  let currentSheet   = 'form2';
+  let sheetLabels    = {};   // key → label
 
+  // Load municipalities
   fetch('/api/municipalities')
     .then(r => r.json())
-    .then(list => {
-      municipalities = list;
-      rebuildOptions('');
+    .then(list => { municipalities = list; rebuildOptions(''); });
+
+  // Load sheet list and populate selector
+  fetch('/api/sheets')
+    .then(r => r.json())
+    .then(sheets => {
+      sheets.forEach(s => {
+        sheetLabels[s.key] = s.label;
+        const opt = document.createElement('option');
+        opt.value = s.key; opt.textContent = s.label;
+        sheetSelect.appendChild(opt);
+      });
     });
 
   function rebuildOptions(q) {
@@ -475,20 +563,42 @@
     const muni = muniSelect.value;
     if (!muni) {
       placeholder.style.display = ''; report.style.display = 'none';
-      loading.style.display = 'none'; return;
+      loading.style.display = 'none';
+      sheetWrap.style.display = 'none'; sheetDivider.style.display = 'none';
+      return;
     }
-    loadMunicipality(muni);
+    currentMuni = muni;
+    sheetWrap.style.display = 'flex'; sheetDivider.style.display = '';
+    loadCurrentView();
   });
 
-  /* ── Data loading ─────────────────────────────────────── */
-  function loadMunicipality(muni) {
+  sheetSelect.addEventListener('change', () => {
+    currentSheet = sheetSelect.value;
+    if (currentMuni) loadCurrentView();
+  });
+
+  /* ── Master loader ────────────────────────────────────── */
+  function loadCurrentView() {
+    if (!currentMuni) return;
     placeholder.style.display = 'none';
     report.style.display = 'none';
     loading.style.display = 'block';
+
+    if (currentSheet === 'form2') {
+      fetchForm2(currentMuni);
+    } else {
+      fetchGenericSheet(currentSheet, currentMuni);
+    }
+  }
+
+  /* ── Form2 (existing logic) ───────────────────────────── */
+  function fetchForm2(muni) {
     fetch(`/api/form2/${encodeURIComponent(muni)}`)
       .then(r => r.json())
       .then(data => {
         loading.style.display = 'none';
+        form2View.style.display = '';
+        genericView.style.display = 'none';
         renderReport(data);
         report.style.display = 'block';
       })
@@ -497,6 +607,120 @@
         placeholder.textContent = 'שגיאה בטעינת הנתונים';
         placeholder.style.display = '';
       });
+  }
+
+  /* ── Generic sheet ───────────────────────────────────────── */
+  function fetchGenericSheet(sheet, muni) {
+    const url = `/api/sheet_data?sheet=${encodeURIComponent(sheet)}&municipality=${encodeURIComponent(muni)}`;
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        loading.style.display = 'none';
+        form2View.style.display = 'none';
+        genericView.style.display = '';
+        renderGenericSheet(data);
+        report.style.display = 'block';
+      })
+      .catch(() => {
+        loading.style.display = 'none';
+        placeholder.textContent = 'שגיאה בטעינת הנתונים';
+        placeholder.style.display = '';
+      });
+  }
+
+  // Column header abbreviations (using actual year numbers)
+  function abbrevCol(col, yc, yp) {
+    const map = {
+      'תקציב שנה נוכחית':            `תקציב ${yc}`,
+      'ביצוע שנה נוכחית':            `ביצוע ${yc}`,
+      'שנה נוכחית':                  `${yc}`,
+      'תקציב שנה קודמת':             `תקציב ${yp}`,
+      'ביצוע שנה קודמת':             `ביצוע ${yp}`,
+      'שנה קודמת':                   `${yp}`,
+      'אחוז ביצוע מסהכ שנה נוכחית':  `% מסה"כ (${yc})`,
+      'אחוז ביצוע מסהכ שנה קודמת':   `% מסה"כ (${yp})`,
+    };
+    return map[col] || col;
+  }
+
+  function isPercentCol(col) {
+    return col.includes('אחוז') || col.includes('%');
+  }
+
+  function fmtGenericVal(val, col) {
+    if (val === null || val === undefined) return null;
+    if (isPercentCol(col)) return val.toFixed(1) + '%';
+    const abs = Math.abs(val);
+    if (abs === 0) return '0';
+    if (abs < 10 && !Number.isInteger(val)) return val.toFixed(2);
+    if (abs < 1000 && !Number.isInteger(val)) return val.toFixed(1);
+    const sign = val < 0 ? '−' : '';
+    return sign + Math.abs(Math.round(val)).toLocaleString('he-IL');
+  }
+
+  function getGenericRowClass(label, row, cols) {
+    const lbl = label;
+    if (lbl.includes('סהכ') || lbl.includes('סה"כ')) return 'gen-subtotal';
+    if (lbl.includes('אחוז') || lbl.includes('יחס ')) return 'gen-pct-row';
+    if (lbl.includes('עודף') || lbl.includes('גרעון')) {
+      // Find primary value to determine color
+      const prioCols = cols.filter(c => !isPercentCol(c));
+      for (const c of prioCols) {
+        const v = row[c];
+        if (v !== null && v !== undefined) return v >= 0 ? 'gen-result-pos' : 'gen-result-neg';
+      }
+      return 'gen-result-pos';
+    }
+    return '';
+  }
+
+  function renderGenericSheet(data) {
+    const container = document.getElementById('generic-container');
+    const panelHeader = document.getElementById('generic-panel-header');
+
+    // Panel title
+    const sheetLabel = sheetLabels[data.sheet] || data.sheet || 'גיליון';
+    panelHeader.textContent = sheetLabel;
+
+    // Report title
+    document.getElementById('report-title-text').textContent =
+      `${data.municipality} — ${sheetLabel}`;
+    document.getElementById('report-subtitle').textContent =
+      `נתוני ביצוע | שנת דוח ${data.year_cur} | יחידות: אלפי ש"ח`;
+
+    if (!data.rows || data.rows.length === 0) {
+      container.innerHTML = '<div id="generic-empty">אין נתונים לרשות זו בגיליון זה</div>';
+      return;
+    }
+
+    const cols = data.columns;
+    const yc = data.year_cur, yp = data.year_prev;
+
+    // Build table
+    let html = '<table class="gen-table"><thead><tr>';
+    html += '<th class="gen-th-label">שורה</th>';
+    cols.forEach(c => {
+      html += `<th class="gen-th-num">${abbrevCol(c, yc, yp)}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    data.rows.forEach(row => {
+      const cls = getGenericRowClass(row.label, row, cols);
+      html += `<tr${cls ? ` class="${cls}"` : ''}>`;
+      html += `<td class="gen-td-label">${row.label}</td>`;
+      cols.forEach(c => {
+        const formatted = fmtGenericVal(row[c], c);
+        if (formatted === null) {
+          html += '<td class="gen-td-null gen-td-num">—</td>';
+        } else {
+          html += `<td class="gen-td-num">${formatted}</td>`;
+        }
+      });
+      html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
   }
 
   // ── Formatting ────────────────────────────────────────────
@@ -587,8 +811,10 @@
   function renderReport(data) {
     document.getElementById('report-title-text').textContent =
       `${data.municipality} — טופס מס׳ 2`;
+    // Restore form2 subtitle
+    document.getElementById('report-subtitle').innerHTML =
+      `נתוני ביצוע | שנת דוח <span id="year-cur-label">${data.year_cur}</span> | יחידות: אלפי ש"ח | דירוג מתוך <span id="n-munis">—</span> רשויות`;
     // Update year labels everywhere
-    document.getElementById('year-cur-label').textContent = data.year_cur;
     document.querySelectorAll('.hdr-cur').forEach(el => el.textContent = data.year_cur);
     document.querySelectorAll('.hdr-prev').forEach(el => el.textContent = data.year_prev);
     const n = renderTable('tbody-receipts', data.receipts, 'receipts');

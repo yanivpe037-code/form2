@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
 import pandas as pd
 import numpy as np
 import os
@@ -215,6 +215,57 @@ print("Cross-municipality stats precomputed.")
 
 
 # ---------------------------------------------------------------------------
+# Extra sheets (generic display)
+# ---------------------------------------------------------------------------
+EXTRA_SHEETS_CACHE = os.path.join(os.path.dirname(__file__), 'extra_sheets_cache.pkl')
+extra_sheets_data = None
+
+DISPLAY_SHEETS = [
+    {'key': 'form2',              'label': 'טופס 2 – תקבולים ותשלומים'},
+    {'key': 'דוח לתושב',          'label': 'דוח לתושב'},
+    {'key': 'ספר לבן',            'label': 'ספר לבן'},
+    {'key': 'טופס 1 אקטיב',       'label': 'מאזן – נכסים (טופס 1א)'},
+    {'key': 'טופס 1 פאסיב',       'label': 'מאזן – התחייבויות (טופס 1פ)'},
+    {'key': 'נספח 2 לטופס 2',     'label': 'נספח 2 – הוצאות פירוט'},
+    {'key': 'נספח 3 לטופס 2',     'label': 'נספח 3 – הכנסות פירוט'},
+    {'key': 'נספח 5 לטופס 2',     'label': 'נספח 5 – שכר'},
+    {'key': 'טופס 3',             'label': 'טופס 3 – מלוות'},
+    {'key': 'טופס 4',             'label': 'טופס 4 – תקציב פיתוח'},
+    {'key': 'דוח תמיכות',         'label': 'דוח תמיכות'},
+]
+
+PREFERRED_COL_ORDER = [
+    'תקציב שנה נוכחית',
+    'ביצוע שנה נוכחית',
+    'שנה נוכחית',
+    'תקציב שנה קודמת',
+    'ביצוע שנה קודמת',
+    'שנה קודמת',
+    'אחוז ביצוע מסהכ שנה נוכחית',
+    'אחוז ביצוע מסהכ שנה קודמת',
+]
+
+
+def load_extra_sheets():
+    global extra_sheets_data
+    if os.path.exists(EXTRA_SHEETS_CACHE):
+        print("Loading extra sheets cache...")
+        with open(EXTRA_SHEETS_CACHE, 'rb') as f:
+            df = pickle.load(f)
+        # Keep ALL years — "נוכחית" columns live in YEAR_CUR report,
+        # "קודמת" columns live in YEAR_PREV report; they don't overlap.
+        df['שורה'] = df['שורה'].astype(str).str.strip()
+        extra_sheets_data = df
+        print(f"Extra sheets loaded: {len(df)} rows, {len(df['גליון'].unique())} sheets")
+    else:
+        print("Warning: extra_sheets_cache.pkl not found. Extra sheets unavailable.")
+        extra_sheets_data = None
+
+
+load_extra_sheets()
+
+
+# ---------------------------------------------------------------------------
 # API endpoints
 # ---------------------------------------------------------------------------
 @app.route('/')
@@ -342,6 +393,77 @@ def get_topbottom(side, row_key):
 
     return jsonify({'row_key': row_key, 'top5': top5, 'bottom5': bottom5,
                     'total': len(all_pairs), 'n_zero': n_zero, 'zeros': zeros})
+
+
+@app.route('/api/sheets')
+def get_sheets():
+    return jsonify(DISPLAY_SHEETS)
+
+
+@app.route('/api/sheet_data')
+def get_sheet_data():
+    sheet_name   = request.args.get('sheet', '')
+    municipality = request.args.get('municipality', '')
+
+    if not sheet_name or not municipality:
+        return jsonify({'error': 'Missing parameters', 'rows': [], 'columns': []})
+
+    if extra_sheets_data is None:
+        return jsonify({'error': 'Extra sheets not available', 'rows': [], 'columns': [],
+                        'year_cur': YEAR_CUR, 'year_prev': YEAR_PREV})
+
+    muni_df = extra_sheets_data[
+        (extra_sheets_data['גליון'] == sheet_name) &
+        (extra_sheets_data['שם_רשות'] == municipality)
+    ]
+
+    if muni_df.empty:
+        return jsonify({'rows': [], 'columns': [], 'year_cur': YEAR_CUR, 'year_prev': YEAR_PREV,
+                        'municipality': municipality, 'sheet': sheet_name})
+
+    # All unique columns present for this municipality in this sheet
+    all_cols = muni_df['עמודה'].dropna().unique().tolist()
+
+    # Order by preferred list first, then any remaining columns
+    ordered_cols = [c for c in PREFERRED_COL_ORDER if c in all_cols]
+    ordered_cols += [c for c in all_cols if c not in ordered_cols]
+
+    # Build (שורה, עמודה) → ערך lookup
+    lookup = {}
+    for _, r in muni_df.iterrows():
+        key = (str(r['שורה']).strip(), str(r['עמודה']))
+        v = r['ערך']
+        lookup[key] = float(v) if pd.notna(v) else None
+
+    # Ordered rows by קוד (unique labels)
+    row_order = (muni_df[['קוד', 'שורה']]
+                 .drop_duplicates()
+                 .sort_values('קוד')
+                 .reset_index(drop=True))
+
+    rows = []
+    seen = set()
+    for _, rr in row_order.iterrows():
+        label = str(rr['שורה']).strip()
+        if label in seen:
+            continue
+        seen.add(label)
+        row = {
+            'label': label,
+            'code': float(rr['קוד']) if pd.notna(rr['קוד']) else None,
+        }
+        for col in ordered_cols:
+            row[col] = lookup.get((label, col))
+        rows.append(row)
+
+    return jsonify({
+        'rows': rows,
+        'columns': ordered_cols,
+        'year_cur': YEAR_CUR,
+        'year_prev': YEAR_PREV,
+        'municipality': municipality,
+        'sheet': sheet_name,
+    })
 
 
 if __name__ == '__main__':

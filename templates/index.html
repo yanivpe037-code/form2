@@ -328,6 +328,37 @@
     .kpi-rank-label { font-size: 0.6rem; color: #94a3b8; margin-top: 3px; text-align: left; direction: ltr; }
     .kpi-p50-line   { font-size: 0.62rem; color: #94a3b8; margin-top: 2px; }
     #analyst-loading { text-align: center; padding: 20px; }
+
+    /* ── Sheet analysis section ──────────────────────────── */
+    .sa-summary {
+      display: flex; gap: 0; padding: 10px 16px 6px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .sa-stat {
+      flex: 1; text-align: center; padding: 4px 0;
+      border-left: 1px solid #e2e8f0; font-size: 0.68rem; color: #64748b;
+    }
+    .sa-stat:last-child { border-left: none; }
+    .sa-stat-num { font-size: 1.1rem; font-weight: 800; line-height: 1.2; }
+    .sa-rows-wrap { padding: 0 16px 12px; display: flex; flex-direction: column; gap: 5px; }
+    .sa-row-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 10px; border-radius: 7px; gap: 8px;
+    }
+    .sa-row-item.sa-top    { background: #dcfce7; border: 1px solid #86efac; }
+    .sa-row-item.sa-bottom { background: #fff1f2; border: 1px solid #fecdd3; }
+    .sa-row-label { font-size: 0.72rem; font-weight: 600; flex: 1; text-align: right; }
+    .sa-row-val   { font-size: 0.7rem; color: #374151; white-space: nowrap; direction: ltr; }
+    .sa-row-rank  { font-size: 0.72rem; font-weight: 800; white-space: nowrap; min-width: 42px; text-align: left; direction: ltr; }
+    .sa-row-item.sa-top    .sa-row-rank { color: #15803d; }
+    .sa-row-item.sa-bottom .sa-row-rank { color: #dc2626; }
+    .sa-more { font-size: 0.65rem; color: #94a3b8; padding: 2px 0; text-align: center; }
+    .sa-all-mid { padding: 12px 16px 16px; color: #64748b; font-size: 0.78rem; text-align: center; }
+    #sheet-analysis-col-label {
+      font-size: 0.65rem; color: #a3aab7; padding: 6px 16px 2px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    #sheet-analysis-col-label span { background: #e0e7ff; color: #3730a3; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 0.62rem; }
   </style>
 </head>
 <body>
@@ -474,6 +505,17 @@
       </div>
       <div class="analyst-section-title" id="kpi-section-title" style="display:none">📊 מדדי ביצוע — השוואה לכלל הרשויות</div>
       <div id="analyst-kpis-container"></div>
+
+      <!-- Sheet-specific analysis (shown only when a generic sheet is active) -->
+      <div id="sheet-analysis-section" style="display:none">
+        <div class="analyst-section-title" style="border-top:1px solid #f1f5f9; margin-top:4px; padding-top:14px;">
+          📋 ניתוח גיליון: <span id="sheet-analysis-name" style="color:#4f46e5"></span>
+        </div>
+        <div id="sheet-analysis-col-label" style="display:none">
+          עמודה מנותחת: <span id="sheet-analysis-col"></span>
+        </div>
+        <div id="sheet-analysis-body"></div>
+      </div>
     </div>
 
   </div><!-- /report -->
@@ -579,9 +621,13 @@
     analystToggle.classList.toggle('active', analystMode);
     analystToggle.textContent = analystMode ? '📊 ניתוח ✓' : '📊 ניתוח';
     if (currentMuni) {
-      loadCurrentView();
-      if (analystMode) loadAnalystPanel(currentMuni);
-      else analystPanel.style.display = 'none';
+      loadCurrentView();  // reloads sheet with/without analyst=1 param
+      if (analystMode) {
+        loadAnalystPanel(currentMuni);
+      } else {
+        analystPanel.style.display = 'none';
+        document.getElementById('sheet-analysis-section').style.display = 'none';
+      }
     }
   });
 
@@ -600,6 +646,8 @@
 
   /* ── Form2 ────────────────────────────────────────────── */
   function fetchForm2(muni) {
+    // Clear sheet-specific analysis — not applicable for Form 2
+    document.getElementById('sheet-analysis-section').style.display = 'none';
     fetch(`/api/form2/${encodeURIComponent(muni)}`)
       .then(r => r.json())
       .then(data => {
@@ -628,6 +676,9 @@
         genericView.style.display = '';
         renderGenericSheet(data);
         report.style.display = 'block';
+        // Sheet-specific analyst breakdown (only if analyst panel is open)
+        if (analystMode) renderSheetAnalysis(data);
+        else document.getElementById('sheet-analysis-section').style.display = 'none';
       })
       .catch(() => {
         loading.style.display = 'none';
@@ -867,6 +918,8 @@
     document.getElementById('analyst-kpis-container').innerHTML = '';
     document.getElementById('kpi-section-title').style.display = 'none';
     document.getElementById('health-score-num').textContent = '—';
+    // Sheet analysis will be populated by fetchGenericSheet() after data loads
+    document.getElementById('sheet-analysis-section').style.display = 'none';
 
     fetch(`/api/analyst/${encodeURIComponent(muni)}`)
       .then(r => r.json())
@@ -940,6 +993,104 @@
         </div>
       `;
     }).join('');
+  }
+
+  /* ── Sheet analysis (per-sheet percentile breakdown) ─────── */
+  function renderSheetAnalysis(data) {
+    const section  = document.getElementById('sheet-analysis-section');
+    const colLabel = document.getElementById('sheet-analysis-col-label');
+    if (!data || !data.analyst_mode || !data.rows || currentSheet === 'form2') {
+      section.style.display = 'none';
+      return;
+    }
+
+    // Find primary (non-percent) column that has at least one _ranks entry
+    let primaryCol = null;
+    for (const c of (data.columns || [])) {
+      if (!isPercentCol(c) && data.rows.some(r => r._ranks && r._ranks[c])) {
+        primaryCol = c;
+        break;
+      }
+    }
+    if (!primaryCol) { section.style.display = 'none'; return; }
+
+    // Build ranked list
+    const ranked = (data.rows || [])
+      .filter(r => r._ranks && r._ranks[primaryCol])
+      .map(r => ({
+        label:   r.label,
+        value:   r[primaryCol],
+        pctrank: r._ranks[primaryCol].pctrank,
+        p50:     r._ranks[primaryCol].p50,
+        n:       r._ranks[primaryCol].n,
+      }))
+      .sort((a, b) => b.pctrank - a.pctrank);
+
+    if (ranked.length === 0) { section.style.display = 'none'; return; }
+
+    const top    = ranked.filter(r => r.pctrank >= 75);
+    const bottom = ranked.filter(r => r.pctrank < 25).reverse(); // worst first
+    const total  = ranked.length;
+
+    // Update header
+    document.getElementById('sheet-analysis-name').textContent =
+      sheetLabels[data.sheet] || data.sheet || '';
+    document.getElementById('sheet-analysis-col').textContent = primaryCol;
+    colLabel.style.display = '';
+
+    // Build HTML
+    let html = `
+      <div class="sa-summary">
+        <div class="sa-stat">
+          <div class="sa-stat-num">${total}</div>
+          <div>שורות נותחו</div>
+        </div>
+        <div class="sa-stat">
+          <div class="sa-stat-num" style="color:#15803d">${top.length}</div>
+          <div>מצוין (75%+)</div>
+        </div>
+        <div class="sa-stat">
+          <div class="sa-stat-num" style="color:#d97706">${ranked.filter(r=>r.pctrank>=25&&r.pctrank<75).length}</div>
+          <div>ממוצע (25%–75%)</div>
+        </div>
+        <div class="sa-stat">
+          <div class="sa-stat-num" style="color:#dc2626">${bottom.length}</div>
+          <div>דורש תשומת לב (&lt;25%)</div>
+        </div>
+      </div>`;
+
+    function rowItem(r, cls) {
+      const arrow  = r.pctrank >= 50 ? '▲' : '▼';
+      const valStr = fmtGenericVal(r.value, primaryCol);
+      return `<div class="sa-row-item ${cls}">
+        <span class="sa-row-label">${r.label}</span>
+        ${valStr !== null ? `<span class="sa-row-val">${valStr}</span>` : ''}
+        <span class="sa-row-rank">${arrow} ${Math.round(r.pctrank)}%</span>
+      </div>`;
+    }
+
+    if (top.length > 0) {
+      html += `<div class="analyst-section-title" style="padding-top:8px;padding-bottom:2px">🟢 ביצוע מצוין — אחוזון 75%+</div>
+               <div class="sa-rows-wrap">`;
+      top.slice(0, 8).forEach(r => { html += rowItem(r, 'sa-top'); });
+      if (top.length > 8) html += `<div class="sa-more">ועוד ${top.length - 8} שורות נוספות</div>`;
+      html += `</div>`;
+    }
+
+    if (bottom.length > 0) {
+      html += `<div class="analyst-section-title" style="padding-top:4px;padding-bottom:2px">🔴 דורש תשומת לב — אחוזון פחות מ-25%</div>
+               <div class="sa-rows-wrap">`;
+      bottom.slice(0, 8).forEach(r => { html += rowItem(r, 'sa-bottom'); });
+      if (bottom.length > 8) html += `<div class="sa-more">ועוד ${bottom.length - 8} שורות נוספות</div>`;
+      html += `</div>`;
+    }
+
+    if (top.length === 0 && bottom.length === 0) {
+      html += `<div class="sa-all-mid">כל השורות בטווח הממוצע (25%–75%)</div>`;
+    }
+
+    document.getElementById('sheet-analysis-body').innerHTML = html;
+    section.style.display = '';
   }
 
   /* ── Top / Bottom modal ────────────────────────────────── */

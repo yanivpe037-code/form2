@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>טופס 2 - ריכוז תקבולים ותשלומים</title>
+  <title>דוחות כספיים רשויות מקומיות 2023</title>
   <style>
     html { font-size: 150%; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,15 +19,15 @@
     .site-header {
       background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
       color: #fff;
-      padding: 18px 32px;
+      padding: 14px 28px;
       display: flex;
       align-items: center;
-      gap: 24px;
+      gap: 20px;
       flex-wrap: wrap;
     }
-    .site-header h1 { font-size: 1.4rem; font-weight: 700; white-space: nowrap; }
-    .site-header .subtitle { font-size: 0.85rem; opacity: 0.75; white-space: nowrap; }
-    .selector-wrap { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+    .site-header h1 { font-size: 1.25rem; font-weight: 700; white-space: nowrap; }
+    .site-header .subtitle { font-size: 0.78rem; opacity: 0.75; white-space: nowrap; }
+    .selector-wrap { display: flex; align-items: center; gap: 10px; margin-right: auto; flex-wrap: wrap; }
     .selector-wrap label { font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
     .muni-selector { display: flex; align-items: center; gap: 6px; }
     #muni-search {
@@ -39,14 +39,13 @@
     #muni-search::placeholder { color: #93c5fd; }
     #muni-select {
       font-family: inherit; font-size: 0.95rem; padding: 7px 10px;
-      border: none; border-radius: 0 6px 6px 0; min-width: 220px;
+      border: none; border-radius: 0 6px 6px 0; min-width: 210px;
       background: #fff; color: #1e3a8a; font-weight: 700; direction: rtl;
       cursor: pointer; outline: none;
     }
 
     /* ── Main area ───────────────────────────────────────── */
-    main { padding: 24px 16px; }
-
+    main { padding: 20px 14px; }
     #placeholder {
       text-align: center; padding: 60px 20px;
       color: #64748b; font-size: 1.1rem;
@@ -65,11 +64,10 @@
 
     /* ── Report ──────────────────────────────────────────── */
     #report { display: none; }
-    .report-title { text-align: center; margin-bottom: 18px; }
+    .report-title { text-align: center; margin-bottom: 16px; }
     .report-title h2 { font-size: 1.3rem; color: #1e3a8a; font-weight: 800; }
     .report-title p { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
 
-    /* Two panels side by side */
     .panels { display: flex; gap: 16px; align-items: flex-start; }
     .panel {
       flex: 1; min-width: 0; background: #fff;
@@ -85,8 +83,6 @@
 
     /* ── Table ───────────────────────────────────────────── */
     table { width: 100%; border-collapse: collapse; font-size: 0.78rem; direction: rtl; }
-
-    /* Sub-header row for column groups */
     thead tr.th-group th {
       background: #f1f5f9; font-size: 0.68rem; font-weight: 700;
       color: #64748b; padding: 4px 6px; text-align: center;
@@ -110,22 +106,19 @@
     td.td-stat  { text-align: center; font-size: 0.7rem; color: #7c3aed; white-space: nowrap; width: 46px; }
     td.td-rank  { text-align: center; font-size: 0.72rem; font-weight: 700; white-space: nowrap; width: 40px; }
 
-    /* rank badge colours */
-    .rank-top    { color: #b45309; }   /* gold   – top 10% */
-    .rank-high   { color: #166534; }   /* green  – top 25% */
-    .rank-mid    { color: #1d4ed8; }   /* blue   – top 50% */
-    .rank-low    { color: #6b7280; }   /* gray   – bottom 50% */
+    .rank-top  { color: #b45309; }
+    .rank-high { color: #166534; }
+    .rank-mid  { color: #1d4ed8; }
+    .rank-low  { color: #6b7280; }
 
     td.zero     { color: #d1d5db; }
     td.negative { color: #dc2626; }
 
-    /* ── Row types ───────────────────────────────────────── */
     tr.row-section_header td {
       background: #eff6ff; font-weight: 800; font-size: 0.8rem;
       color: #1e40af; padding: 7px 10px; border-bottom: 1px solid #bfdbfe;
     }
     tr.row-section_header td.td-num { color: #93c5fd; font-size: 0.75rem; }
-
     tr.row-subtotal td {
       background: #f0fdf4; font-weight: 700; color: #166534;
       border-top: 1px solid #bbf7d0; border-bottom: 1px solid #bbf7d0;
@@ -133,55 +126,26 @@
     tr.row-subtotal td.td-pct  { color: #16a34a; }
     tr.row-subtotal td.td-stat { color: #059669; }
     tr.row-subtotal td.td-num  { color: #86efac; }
-
     tr.row-irregular td {
       background: #fffbeb; font-weight: 600; color: #92400e;
       border-top: 1px solid #fde68a;
     }
     tr.row-irregular td.td-pct  { color: #d97706; }
     tr.row-irregular td.td-stat { color: #b45309; }
-
-    /* ── Sub-rows (children of a parent row) ────────────────── */
-    /* Parent row that has sub_row children */
-    tr.has-children td {
-      border-bottom: none;
-    }
-    tr.has-children td.td-label::after {
-      content: ' ▾';
-      font-size: 0.65rem;
-      color: #dc2626;
-      vertical-align: middle;
-    }
-
-    /* Sub-row itself */
+    tr.has-children td { border-bottom: none; }
+    tr.has-children td.td-label::after { content: ' ▾'; font-size: 0.65rem; color: #dc2626; vertical-align: middle; }
     tr.row-sub_row td {
-      background: #fff5f5;
-      border-right: 3px solid #dc2626;
-      border-bottom: 1px solid #fecaca;
-      font-size: 0.74rem;
+      background: #fff5f5; border-right: 3px solid #dc2626;
+      border-bottom: 1px solid #fecaca; font-size: 0.74rem;
     }
-    tr.row-sub_row:last-of-type td,
-    tr.row-sub_row + tr:not(.row-sub_row) {
-      /* last sub-row gets a closing bottom border */
-    }
-    tr.row-sub_row td.td-label {
-      padding-right: 26px;
-      color: #991b1b;
-      font-style: italic;
-    }
-    tr.row-sub_row td.td-label::before {
-      content: '↳ ';
-      color: #dc2626;
-      font-style: normal;
-      font-weight: 700;
-    }
+    tr.row-sub_row td.td-label { padding-right: 26px; color: #991b1b; font-style: italic; }
+    tr.row-sub_row td.td-label::before { content: '↳ '; color: #dc2626; font-style: normal; font-weight: 700; }
     tr.row-sub_row td.td-num  { color: #fca5a5; }
     tr.row-sub_row td.td-val  { color: #7f1d1d; }
     tr.row-sub_row td.td-pct  { color: #b91c1c; }
     tr.row-sub_row td.td-stat { color: #b91c1c; }
     tr.row-sub_row td.td-rank { color: #b91c1c; }
     tr.row-sub_row td.zero    { color: #fca5a5; }
-
     tr.row-grand_total td {
       background: #1e3a8a; color: #fff; font-weight: 800;
       font-size: 0.82rem; border-top: 2px solid #1e40af;
@@ -189,7 +153,6 @@
     tr.row-grand_total td.td-pct  { color: #bfdbfe; }
     tr.row-grand_total td.td-stat { color: #bfdbfe; }
     tr.row-grand_total td.zero    { color: #6b7280; }
-
     .panel-payments tr.row-grand_total td { background: #0f766e; }
     .panel-payments tr.row-grand_total td.td-pct  { color: #99f6e4; }
     .panel-payments tr.row-grand_total td.td-stat { color: #99f6e4; }
@@ -197,53 +160,19 @@
     @media (max-width: 900px) { .panels { flex-direction: column; } }
 
     /* ── Balance summary bar ─────────────────────────────── */
-    #balance-bar {
-      margin-top: 14px;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-      overflow: hidden;
-    }
-    #balance-bar table {
-      width: 100%; border-collapse: collapse;
-      font-size: 0.82rem; direction: rtl;
-    }
-    #balance-bar thead th {
-      background: #1e293b; color: #cbd5e1;
-      padding: 8px 16px; font-weight: 700;
-      font-size: 0.72rem; text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
+    #balance-bar { margin-top: 14px; background: #fff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); overflow: hidden; }
+    #balance-bar table { width: 100%; border-collapse: collapse; font-size: 0.82rem; direction: rtl; }
+    #balance-bar thead th { background: #1e293b; color: #cbd5e1; padding: 8px 16px; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
     #balance-bar thead th.bal-label { text-align: right; width: 220px; }
-    #balance-bar thead th.bal-num   { text-align: left;  min-width: 160px; }
-    #balance-bar tbody td {
-      padding: 9px 16px; border-bottom: 1px solid #f1f5f9;
-      vertical-align: middle;
-    }
-    #balance-bar tbody td.bal-label {
-      font-weight: 600; color: #334155;
-    }
-    #balance-bar tbody td.bal-num {
-      text-align: left; font-variant-numeric: tabular-nums;
-      white-space: nowrap; color: #0f172a; font-weight: 500;
-      direction: ltr;   /* keep minus sign on the left */
-    }
-    #balance-bar tr.bal-divider td {
-      border-top: 2px solid #e2e8f0; background: #f8fafc;
-    }
-    #balance-bar tr.bal-result td {
-      background: #f0fdf4; border-top: 2px solid #bbf7d0;
-      font-weight: 800; font-size: 0.88rem;
-      border-bottom: none;
-    }
+    #balance-bar thead th.bal-num   { text-align: left; min-width: 160px; }
+    #balance-bar tbody td { padding: 9px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    #balance-bar tbody td.bal-label { font-weight: 600; color: #334155; }
+    #balance-bar tbody td.bal-num   { text-align: left; font-variant-numeric: tabular-nums; white-space: nowrap; color: #0f172a; font-weight: 500; direction: ltr; }
+    #balance-bar tr.bal-divider td  { border-top: 2px solid #e2e8f0; background: #f8fafc; }
+    #balance-bar tr.bal-result td   { background: #f0fdf4; border-top: 2px solid #bbf7d0; font-weight: 800; font-size: 0.88rem; border-bottom: none; }
     #balance-bar tr.bal-result td.bal-label { color: #166534; }
-    #balance-bar tr.bal-deficit td {
-      background: #fff1f2; border-top: 2px solid #fecdd3;
-      font-weight: 800; font-size: 0.88rem;
-      border-bottom: none;
-    }
+    #balance-bar tr.bal-deficit td  { background: #fff1f2; border-top: 2px solid #fecdd3; font-weight: 800; font-size: 0.88rem; border-bottom: none; }
     #balance-bar tr.bal-deficit td.bal-label { color: #9f1239; }
-    /* per-cell sign colours (set via JS) */
     .bal-positive { color: #15803d !important; }
     .bal-negative { color: #dc2626 !important; }
 
@@ -252,71 +181,31 @@
     tr.row-clickable:hover td { filter: brightness(0.94); }
 
     /* ── Top/Bottom modal ────────────────────────────────── */
-    #tb-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(15,23,42,0.55); z-index: 2000; backdrop-filter: blur(2px);
-    }
+    #tb-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.55); z-index: 2000; backdrop-filter: blur(2px); }
     #tb-overlay.open { display: block; }
-    #tb-modal {
-      display: none; position: fixed;
-      top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: #fff; border-radius: 14px; padding: 28px 30px 24px;
-      min-width: 440px; max-width: 92vw; max-height: 88vh; overflow-y: auto;
-      z-index: 2001; direction: rtl; box-shadow: 0 24px 64px rgba(0,0,0,0.28);
-    }
+    #tb-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 14px; padding: 28px 30px 24px; min-width: 440px; max-width: 92vw; max-height: 88vh; overflow-y: auto; z-index: 2001; direction: rtl; box-shadow: 0 24px 64px rgba(0,0,0,0.28); }
     #tb-modal.open { display: block; }
-    #tb-close {
-      position: absolute; top: 14px; left: 16px;
-      background: #f1f5f9; border: none; font-size: 1.1rem; cursor: pointer;
-      color: #475569; padding: 4px 10px; border-radius: 6px; font-weight: 700;
-    }
+    #tb-close { position: absolute; top: 14px; left: 16px; background: #f1f5f9; border: none; font-size: 1.1rem; cursor: pointer; color: #475569; padding: 4px 10px; border-radius: 6px; font-weight: 700; }
     #tb-close:hover { background: #e2e8f0; }
-    #tb-title {
-      font-size: 1.05rem; font-weight: 800; color: #1e3a8a;
-      margin-bottom: 18px; padding-left: 40px; line-height: 1.4;
-    }
+    #tb-title { font-size: 1.05rem; font-weight: 800; color: #1e3a8a; margin-bottom: 18px; padding-left: 40px; line-height: 1.4; }
     .tb-section { margin-bottom: 18px; }
-    .tb-subtitle {
-      font-size: 0.88rem; font-weight: 700; padding: 7px 12px;
-      border-radius: 7px; margin-bottom: 10px; display: flex;
-      align-items: center; gap: 8px;
-    }
-    .tb-top .tb-subtitle  { background: #fef9c3; color: #78350f; }
-    .tb-bot .tb-subtitle  { background: #dcfce7; color: #14532d; }
+    .tb-subtitle { font-size: 0.88rem; font-weight: 700; padding: 7px 12px; border-radius: 7px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .tb-top .tb-subtitle { background: #fef9c3; color: #78350f; }
+    .tb-bot .tb-subtitle { background: #dcfce7; color: #14532d; }
     .tb-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    .tb-table th {
-      background: #f8fafc; padding: 6px 10px; text-align: right;
-      font-weight: 700; color: #374151; border-bottom: 2px solid #e2e8f0;
-    }
+    .tb-table th { background: #f8fafc; padding: 6px 10px; text-align: right; font-weight: 700; color: #374151; border-bottom: 2px solid #e2e8f0; }
     .tb-table td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; }
     .tb-table tr:last-child td { border-bottom: none; }
     .tb-table .td-r { text-align: center; color: #94a3b8; font-size: 0.78rem; width: 28px; }
     .tb-table .td-pct { text-align: center; font-weight: 700; color: #1d4ed8; width: 64px; }
     .tb-top .tb-table .td-pct { color: #b45309; }
     .tb-bot .tb-table .td-pct { color: #15803d; }
-    .tb-footer {
-      font-size: 0.72rem; color: #94a3b8; text-align: center; margin-top: 6px;
-    }
-    /* Zero-report section */
-    .tb-zero-btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: #f1f5f9; border: 1px solid #cbd5e1;
-      color: #475569; font-size: 0.75rem; font-weight: 700;
-      padding: 5px 12px; border-radius: 20px; cursor: pointer;
-      margin-top: 10px; font-family: inherit;
-      transition: background 0.15s, color 0.15s;
-    }
+    .tb-footer { font-size: 0.72rem; color: #94a3b8; text-align: center; margin-top: 6px; }
+    .tb-zero-btn { display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-size: 0.75rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; cursor: pointer; margin-top: 10px; font-family: inherit; transition: background 0.15s, color 0.15s; }
     .tb-zero-btn:hover { background: #e2e8f0; color: #1e3a8a; border-color: #94a3b8; }
-    .tb-zero-section {
-      display: none; margin-top: 10px; padding: 10px 14px;
-      background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;
-    }
+    .tb-zero-section { display: none; margin-top: 10px; padding: 10px 14px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
     .tb-zero-section.open { display: block; }
-    .tb-zero-list {
-      columns: 2; column-gap: 12px;
-      font-size: 0.76rem; color: #374151;
-      list-style: none; margin: 0; padding: 0;
-    }
+    .tb-zero-list { columns: 2; column-gap: 12px; font-size: 0.76rem; color: #374151; list-style: none; margin: 0; padding: 0; }
     .tb-zero-list li { padding: 3px 0; border-bottom: 1px solid #f1f5f9; break-inside: avoid; }
     .tb-zero-list li:last-child { border-bottom: none; }
 
@@ -324,60 +213,129 @@
     #sheet-wrap { align-items: center; gap: 6px; }
     #sheet-wrap label { font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
     #sheet-select {
-      font-family: inherit; font-size: 0.88rem; padding: 7px 10px;
-      border: none; border-radius: 6px; min-width: 200px;
+      font-family: inherit; font-size: 0.82rem; padding: 7px 10px;
+      border: none; border-radius: 6px; min-width: 230px;
       background: #e0e7ff; color: #1e3a8a; font-weight: 700;
       direction: rtl; cursor: pointer; outline: none;
     }
     .sheet-divider { color: rgba(255,255,255,0.35); font-size: 1.2rem; margin: 0 4px; }
 
+    /* ── Analyst button ──────────────────────────────────── */
+    #analyst-toggle {
+      font-family: inherit; font-size: 0.82rem; padding: 7px 14px;
+      border: none; border-radius: 6px; background: #7c3aed; color: #fff;
+      font-weight: 700; cursor: pointer; white-space: nowrap;
+      transition: background 0.15s;
+    }
+    #analyst-toggle:hover  { background: #6d28d9; }
+    #analyst-toggle.active { background: #4c1d95; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+
     /* ── Generic sheet table ─────────────────────────────── */
     #generic-view .panel-header { background: #4f46e5; }
     #generic-container { overflow-x: auto; }
     .gen-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; direction: rtl; }
-    .gen-table thead th {
-      padding: 7px 8px; text-align: center;
-      background: #f8fafc; border-bottom: 2px solid #e2e8f0;
-      font-weight: 700; font-size: 0.7rem; color: #374151;
-      white-space: nowrap;
-    }
+    .gen-table thead th { padding: 7px 8px; text-align: center; background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-weight: 700; font-size: 0.7rem; color: #374151; white-space: nowrap; }
     .gen-table thead th.gen-th-label { text-align: right; min-width: 220px; padding-right: 10px; }
-    .gen-table thead th.gen-th-num  { min-width: 100px; }
+    .gen-table thead th.gen-th-num  { min-width: 90px; }
     .gen-table tbody td { padding: 5px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     .gen-table tbody td.gen-td-label { text-align: right; font-weight: 500; padding-right: 10px; }
-    .gen-table tbody td.gen-td-num  {
-      text-align: left; font-variant-numeric: tabular-nums;
-      white-space: nowrap; direction: ltr; padding-left: 10px;
-    }
+    .gen-table tbody td.gen-td-num  { text-align: left; font-variant-numeric: tabular-nums; white-space: nowrap; direction: ltr; padding-left: 8px; }
     .gen-table tbody td.gen-td-null { color: #d1d5db; text-align: center; }
     .gen-table tbody tr:hover { background: #f0f9ff; }
-    /* Subtotal */
-    .gen-table tr.gen-subtotal td {
-      background: #f0fdf4; font-weight: 700; color: #166534;
-      border-top: 1px solid #bbf7d0; border-bottom: 1px solid #bbf7d0;
-    }
-    /* Result positive (עודף) */
-    .gen-table tr.gen-result-pos td {
-      background: #f0fdf4; font-weight: 800; color: #166534;
-      border-top: 2px solid #bbf7d0; font-size: 0.82rem;
-    }
-    /* Result negative (גרעון) */
-    .gen-table tr.gen-result-neg td {
-      background: #fff1f2; font-weight: 800; color: #9f1239;
-      border-top: 2px solid #fecdd3; font-size: 0.82rem;
-    }
-    /* Percentage / ratio rows */
+    .gen-table tr.gen-subtotal td { background: #f0fdf4; font-weight: 700; color: #166534; border-top: 1px solid #bbf7d0; border-bottom: 1px solid #bbf7d0; }
+    .gen-table tr.gen-result-pos td { background: #f0fdf4; font-weight: 800; color: #166534; border-top: 2px solid #bbf7d0; font-size: 0.82rem; }
+    .gen-table tr.gen-result-neg td { background: #fff1f2; font-weight: 800; color: #9f1239; border-top: 2px solid #fecdd3; font-size: 0.82rem; }
     .gen-table tr.gen-pct-row td { font-size: 0.72rem; color: #6b7280; }
-    /* Empty state */
     #generic-empty { text-align: center; padding: 40px; color: #94a3b8; font-size: 0.9rem; }
+
+    /* ── Analyst rank cell backgrounds ──────────────────── */
+    .rank-bg-green  { background: #dcfce7 !important; }
+    .rank-bg-blue   { background: #eff6ff !important; }
+    .rank-bg-yellow { background: #fefce8 !important; }
+    .rank-bg-red    { background: #fff1f2 !important; }
+    .gen-rank-badge { font-size: 0.6rem; margin-right: 3px; font-weight: 700; }
+
+    /* ── Analyst panel ───────────────────────────────────── */
+    #analyst-panel {
+      margin-top: 16px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    #analyst-header {
+      background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);
+      color: #fff;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    #health-score-wrap {
+      text-align: center;
+      background: rgba(255,255,255,0.15);
+      border-radius: 50%;
+      width: 68px; height: 68px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    #health-score-num   { font-size: 1.5rem; font-weight: 900; line-height: 1; }
+    #health-score-label { font-size: 0.5rem; opacity: 0.8; margin-top: 2px; text-align: center; }
+    #analyst-header-text h3 { font-size: 1rem; font-weight: 800; }
+    #analyst-header-text p  { font-size: 0.75rem; opacity: 0.8; margin-top: 3px; }
+
+    .analyst-section-title {
+      font-size: 0.75rem; font-weight: 700; color: #374151;
+      padding: 12px 16px 4px;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    /* Flag cards */
+    #analyst-flags-container { padding: 0 16px 8px; display: flex; flex-direction: column; gap: 8px; }
+    .flag-card { border-radius: 8px; padding: 10px 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .flag-card.critical { background: #fff1f2; border: 1px solid #fecdd3; }
+    .flag-card.warning  { background: #fffbeb; border: 1px solid #fde68a; }
+    .flag-card.note     { background: #eff6ff; border: 1px solid #bfdbfe; }
+    .flag-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+    .flag-content { flex: 1; }
+    .flag-title { font-size: 0.78rem; font-weight: 700; margin-bottom: 2px; }
+    .flag-card.critical .flag-title { color: #9f1239; }
+    .flag-card.warning  .flag-title { color: #92400e; }
+    .flag-card.note     .flag-title { color: #1e40af; }
+    .flag-detail   { font-size: 0.7rem; color: #374151; line-height: 1.5; }
+    .flag-category { font-size: 0.62rem; color: #94a3b8; margin-top: 3px; }
+
+    /* KPI cards */
+    #analyst-kpis-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      padding: 8px 16px 16px;
+    }
+    .kpi-card {
+      background: #f8fafc; border-radius: 8px;
+      padding: 12px 14px; border: 1px solid #e2e8f0;
+    }
+    .kpi-label { font-size: 0.65rem; color: #64748b; font-weight: 600; margin-bottom: 4px; }
+    .kpi-value { font-size: 1.25rem; font-weight: 800; color: #1e3a8a; }
+    .kpi-rank-bar { margin-top: 7px; height: 5px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+    .kpi-rank-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+    .kpi-rank-fill.good { background: #16a34a; }
+    .kpi-rank-fill.ok   { background: #2563eb; }
+    .kpi-rank-fill.warn { background: #d97706; }
+    .kpi-rank-fill.bad  { background: #dc2626; }
+    .kpi-rank-label { font-size: 0.6rem; color: #94a3b8; margin-top: 3px; text-align: left; direction: ltr; }
+    .kpi-p50-line   { font-size: 0.62rem; color: #94a3b8; margin-top: 2px; }
+    #analyst-loading { text-align: center; padding: 20px; }
   </style>
 </head>
 <body>
 
 <header class="site-header">
   <div>
-    <h1>טופס 2 — ריכוז תקבולים ותשלומים</h1>
-    <div class="subtitle">תקציב רגיל לפי פרקי התקציב (אלפי ש"ח) | השוואה לכלל הרשויות</div>
+    <h1>דוחות כספיים — רשויות מקומיות</h1>
+    <div class="subtitle">נתוני ביצוע תקציב 2023 | אלפי ש"ח | השוואה לכלל 258 הרשויות</div>
   </div>
   <div class="selector-wrap">
     <label for="muni-select">בחר רשות:</label>
@@ -388,10 +346,11 @@
       </select>
     </div>
     <span class="sheet-divider" id="sheet-divider" style="display:none">|</span>
-    <div id="sheet-wrap" style="display:none">
+    <div id="sheet-wrap" style="display:none; align-items:center; gap:6px;">
       <label for="sheet-select">גיליון:</label>
       <select id="sheet-select"></select>
     </div>
+    <button id="analyst-toggle" style="display:none" title="מצב אנליסט — ניתוח והשוואה לכלל הרשויות">📊 ניתוח</button>
   </div>
 </header>
 
@@ -405,92 +364,88 @@
       <p id="report-subtitle">נתוני ביצוע | שנת דוח <span id="year-cur-label">—</span> | יחידות: אלפי ש"ח | דירוג מתוך <span id="n-munis">—</span> רשויות</p>
     </div>
 
-    <!-- ── Form2 view (receipts + payments) ─────────────── -->
+    <!-- ── Form2 view ─────────────────────────────────── -->
     <div id="form2-view">
-    <div class="panels">
-      <!-- RECEIPTS — right panel -->
-      <div class="panel panel-receipts">
-        <div class="panel-header">תקבולים</div>
-        <table id="tbl-receipts">
-          <thead>
-            <tr class="th-group">
-              <th></th><th></th>
-              <th colspan="2" class="th-group-sep">ביצוע <span class="hdr-cur">—</span></th>
-              <th colspan="2" class="th-group-sep">ביצוע <span class="hdr-prev">—</span></th>
-              <th colspan="3" class="th-group-sep">השוואה לכלל הרשויות (<span class="hdr-cur">—</span>)</th>
-            </tr>
-            <tr class="th-cols">
-              <th class="th-num">#</th>
-              <th class="th-label">סעיף</th>
-              <th class="th-group-sep">סכום</th><th>%</th>
-              <th class="th-group-sep">סכום</th><th>%</th>
-              <th class="th-group-sep">ממוצע %</th>
-              <th>חציון %</th>
-              <th>דירוג</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-receipts"></tbody>
-        </table>
+      <div class="panels">
+        <div class="panel panel-receipts">
+          <div class="panel-header">תקבולים</div>
+          <table id="tbl-receipts">
+            <thead>
+              <tr class="th-group">
+                <th></th><th></th>
+                <th colspan="2" class="th-group-sep">ביצוע <span class="hdr-cur">—</span></th>
+                <th colspan="2" class="th-group-sep">ביצוע <span class="hdr-prev">—</span></th>
+                <th colspan="3" class="th-group-sep">השוואה לכלל הרשויות (<span class="hdr-cur">—</span>)</th>
+              </tr>
+              <tr class="th-cols">
+                <th class="th-num">#</th>
+                <th class="th-label">סעיף</th>
+                <th class="th-group-sep">סכום</th><th>%</th>
+                <th class="th-group-sep">סכום</th><th>%</th>
+                <th class="th-group-sep">ממוצע %</th>
+                <th>חציון %</th>
+                <th>דירוג</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-receipts"></tbody>
+          </table>
+        </div>
+        <div class="panel panel-payments">
+          <div class="panel-header">תשלומים</div>
+          <table id="tbl-payments">
+            <thead>
+              <tr class="th-group">
+                <th></th><th></th>
+                <th colspan="2" class="th-group-sep">ביצוע <span class="hdr-cur">—</span></th>
+                <th colspan="2" class="th-group-sep">ביצוע <span class="hdr-prev">—</span></th>
+                <th colspan="3" class="th-group-sep">השוואה לכלל הרשויות (<span class="hdr-cur">—</span>)</th>
+              </tr>
+              <tr class="th-cols">
+                <th class="th-num">#</th>
+                <th class="th-label">סעיף</th>
+                <th class="th-group-sep">סכום</th><th>%</th>
+                <th class="th-group-sep">סכום</th><th>%</th>
+                <th class="th-group-sep">ממוצע %</th>
+                <th>חציון %</th>
+                <th>דירוג</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-payments"></tbody>
+          </table>
+        </div>
       </div>
 
-      <!-- PAYMENTS — left panel -->
-      <div class="panel panel-payments">
-        <div class="panel-header">תשלומים</div>
-        <table id="tbl-payments">
+      <div id="balance-bar" style="display:none">
+        <table>
           <thead>
-            <tr class="th-group">
-              <th></th><th></th>
-              <th colspan="2" class="th-group-sep">ביצוע <span class="hdr-cur">—</span></th>
-              <th colspan="2" class="th-group-sep">ביצוע <span class="hdr-prev">—</span></th>
-              <th colspan="3" class="th-group-sep">השוואה לכלל הרשויות (<span class="hdr-cur">—</span>)</th>
-            </tr>
-            <tr class="th-cols">
-              <th class="th-num">#</th>
-              <th class="th-label">סעיף</th>
-              <th class="th-group-sep">סכום</th><th>%</th>
-              <th class="th-group-sep">סכום</th><th>%</th>
-              <th class="th-group-sep">ממוצע %</th>
-              <th>חציון %</th>
-              <th>דירוג</th>
+            <tr>
+              <th class="bal-label"></th>
+              <th class="bal-num">ביצוע <span class="hdr-cur">—</span></th>
+              <th class="bal-num">ביצוע <span class="hdr-prev">—</span></th>
             </tr>
           </thead>
-          <tbody id="tbody-payments"></tbody>
+          <tbody>
+            <tr>
+              <td class="bal-label">סה"כ תקבולים</td>
+              <td class="bal-num" id="bal-rec-cur">—</td>
+              <td class="bal-num" id="bal-rec-prev">—</td>
+            </tr>
+            <tr class="bal-divider">
+              <td class="bal-label">סה"כ תשלומים</td>
+              <td class="bal-num" id="bal-pay-cur">—</td>
+              <td class="bal-num" id="bal-pay-prev">—</td>
+            </tr>
+            <tr id="bal-result-row">
+              <td class="bal-label">עודף (גרעון) שוטף</td>
+              <td class="bal-num" id="bal-surplus-cur">—</td>
+              <td class="bal-num" id="bal-surplus-prev">—</td>
+            </tr>
+          </tbody>
         </table>
       </div>
-    </div>
-
-    <!-- Balance summary -->
-    <div id="balance-bar" style="display:none">
-      <table>
-        <thead>
-          <tr>
-            <th class="bal-label"></th>
-            <th class="bal-num">ביצוע <span class="hdr-cur">—</span></th>
-            <th class="bal-num">ביצוע <span class="hdr-prev">—</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="bal-label">סה"כ תקבולים</td>
-            <td class="bal-num" id="bal-rec-cur">—</td>
-            <td class="bal-num" id="bal-rec-prev">—</td>
-          </tr>
-          <tr class="bal-divider">
-            <td class="bal-label">סה"כ תשלומים</td>
-            <td class="bal-num" id="bal-pay-cur">—</td>
-            <td class="bal-num" id="bal-pay-prev">—</td>
-          </tr>
-          <tr id="bal-result-row">
-            <td class="bal-label">עודף (גרעון) שוטף</td>
-            <td class="bal-num" id="bal-surplus-cur">—</td>
-            <td class="bal-num" id="bal-surplus-prev">—</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
     </div><!-- /form2-view -->
 
-    <!-- ── Generic sheet view ───────────────────────────── -->
+    <!-- ── Generic sheet view ─────────────────────────── -->
     <div id="generic-view" style="display:none">
       <div class="panel">
         <div class="panel-header" id="generic-panel-header">גיליון</div>
@@ -498,6 +453,27 @@
           <div id="generic-empty">בחר רשות וגיליון להצגת הנתונים</div>
         </div>
       </div>
+    </div>
+
+    <!-- ── Analyst panel ──────────────────────────────── -->
+    <div id="analyst-panel" style="display:none">
+      <div id="analyst-header">
+        <div id="health-score-wrap">
+          <div id="health-score-num">—</div>
+          <div id="health-score-label">ציון<br>בריאות</div>
+        </div>
+        <div id="analyst-header-text">
+          <h3 id="analyst-title">ניתוח פיננסי</h3>
+          <p id="analyst-subtitle"></p>
+        </div>
+      </div>
+      <div id="analyst-loading" style="display:none"><span class="spinner"></span> מחשב...</div>
+      <div id="analyst-flags-section" style="display:none">
+        <div class="analyst-section-title">🚨 התראות ואזהרות</div>
+        <div id="analyst-flags-container"></div>
+      </div>
+      <div class="analyst-section-title" id="kpi-section-title" style="display:none">📊 מדדי ביצוע — השוואה לכלל הרשויות</div>
+      <div id="analyst-kpis-container"></div>
     </div>
 
   </div><!-- /report -->
@@ -512,36 +488,52 @@
 </div>
 
 <script>
-  const muniSearch   = document.getElementById('muni-search');
-  const muniSelect   = document.getElementById('muni-select');
-  const sheetSelect  = document.getElementById('sheet-select');
-  const sheetWrap    = document.getElementById('sheet-wrap');
-  const sheetDivider = document.getElementById('sheet-divider');
-  const placeholder  = document.getElementById('placeholder');
-  const loading      = document.getElementById('loading');
-  const report       = document.getElementById('report');
-  const form2View    = document.getElementById('form2-view');
-  const genericView  = document.getElementById('generic-view');
+  const muniSearch     = document.getElementById('muni-search');
+  const muniSelect     = document.getElementById('muni-select');
+  const sheetSelect    = document.getElementById('sheet-select');
+  const sheetWrap      = document.getElementById('sheet-wrap');
+  const sheetDivider   = document.getElementById('sheet-divider');
+  const analystToggle  = document.getElementById('analyst-toggle');
+  const analystPanel   = document.getElementById('analyst-panel');
+  const placeholder    = document.getElementById('placeholder');
+  const loading        = document.getElementById('loading');
+  const report         = document.getElementById('report');
+  const form2View      = document.getElementById('form2-view');
+  const genericView    = document.getElementById('generic-view');
 
   let municipalities = [];
   let currentMuni    = null;
   let currentSheet   = 'form2';
-  let sheetLabels    = {};   // key → label
+  let sheetLabels    = {};
+  let analystMode    = false;
 
-  // Load municipalities
+  // ── Load municipalities ────────────────────────────────
   fetch('/api/municipalities')
     .then(r => r.json())
     .then(list => { municipalities = list; rebuildOptions(''); });
 
-  // Load sheet list and populate selector
+  // ── Load sheet list with optgroups ────────────────────
   fetch('/api/sheets')
     .then(r => r.json())
     .then(sheets => {
+      let currentGroup = null;
+      let grpEl = null;
       sheets.forEach(s => {
         sheetLabels[s.key] = s.label;
+        const grp = s.group || '';
+        if (grp !== currentGroup) {
+          currentGroup = grp;
+          if (grp) {
+            grpEl = document.createElement('optgroup');
+            grpEl.label = grp;
+            sheetSelect.appendChild(grpEl);
+          } else {
+            grpEl = null;
+          }
+        }
         const opt = document.createElement('option');
         opt.value = s.key; opt.textContent = s.label;
-        sheetSelect.appendChild(opt);
+        (grpEl || sheetSelect).appendChild(opt);
       });
     });
 
@@ -565,16 +557,32 @@
       placeholder.style.display = ''; report.style.display = 'none';
       loading.style.display = 'none';
       sheetWrap.style.display = 'none'; sheetDivider.style.display = 'none';
+      analystToggle.style.display = 'none';
+      analystPanel.style.display = 'none';
       return;
     }
     currentMuni = muni;
     sheetWrap.style.display = 'flex'; sheetDivider.style.display = '';
+    analystToggle.style.display = '';
     loadCurrentView();
+    if (analystMode) loadAnalystPanel(muni);
   });
 
   sheetSelect.addEventListener('change', () => {
     currentSheet = sheetSelect.value;
     if (currentMuni) loadCurrentView();
+  });
+
+  // ── Analyst toggle ─────────────────────────────────────
+  analystToggle.addEventListener('click', () => {
+    analystMode = !analystMode;
+    analystToggle.classList.toggle('active', analystMode);
+    analystToggle.textContent = analystMode ? '📊 ניתוח ✓' : '📊 ניתוח';
+    if (currentMuni) {
+      loadCurrentView();
+      if (analystMode) loadAnalystPanel(currentMuni);
+      else analystPanel.style.display = 'none';
+    }
   });
 
   /* ── Master loader ────────────────────────────────────── */
@@ -583,7 +591,6 @@
     placeholder.style.display = 'none';
     report.style.display = 'none';
     loading.style.display = 'block';
-
     if (currentSheet === 'form2') {
       fetchForm2(currentMuni);
     } else {
@@ -591,7 +598,7 @@
     }
   }
 
-  /* ── Form2 (existing logic) ───────────────────────────── */
+  /* ── Form2 ────────────────────────────────────────────── */
   function fetchForm2(muni) {
     fetch(`/api/form2/${encodeURIComponent(muni)}`)
       .then(r => r.json())
@@ -609,9 +616,10 @@
       });
   }
 
-  /* ── Generic sheet ───────────────────────────────────────── */
+  /* ── Generic sheet ───────────────────────────────────── */
   function fetchGenericSheet(sheet, muni) {
-    const url = `/api/sheet_data?sheet=${encodeURIComponent(sheet)}&municipality=${encodeURIComponent(muni)}`;
+    const analystParam = analystMode ? '&analyst=1' : '';
+    const url = `/api/sheet_data?sheet=${encodeURIComponent(sheet)}&municipality=${encodeURIComponent(muni)}${analystParam}`;
     fetch(url)
       .then(r => r.json())
       .then(data => {
@@ -628,17 +636,17 @@
       });
   }
 
-  // Column header abbreviations (using actual year numbers)
+  // ── Helpers ───────────────────────────────────────────
   function abbrevCol(col, yc, yp) {
     const map = {
-      'תקציב שנה נוכחית':            `תקציב ${yc}`,
-      'ביצוע שנה נוכחית':            `ביצוע ${yc}`,
-      'שנה נוכחית':                  `${yc}`,
-      'תקציב שנה קודמת':             `תקציב ${yp}`,
-      'ביצוע שנה קודמת':             `ביצוע ${yp}`,
-      'שנה קודמת':                   `${yp}`,
-      'אחוז ביצוע מסהכ שנה נוכחית':  `% מסה"כ (${yc})`,
-      'אחוז ביצוע מסהכ שנה קודמת':   `% מסה"כ (${yp})`,
+      'תקציב שנה נוכחית':           `תקציב ${yc}`,
+      'ביצוע שנה נוכחית':           `ביצוע ${yc}`,
+      'שנה נוכחית':                 `${yc}`,
+      'תקציב שנה קודמת':            `תקציב ${yp}`,
+      'ביצוע שנה קודמת':            `ביצוע ${yp}`,
+      'שנה קודמת':                  `${yp}`,
+      'אחוז ביצוע מסהכ שנה נוכחית': `% מסה"כ (${yc})`,
+      'אחוז ביצוע מסהכ שנה קודמת':  `% מסה"כ (${yp})`,
     };
     return map[col] || col;
   }
@@ -659,11 +667,9 @@
   }
 
   function getGenericRowClass(label, row, cols) {
-    const lbl = label;
-    if (lbl.includes('סהכ') || lbl.includes('סה"כ')) return 'gen-subtotal';
-    if (lbl.includes('אחוז') || lbl.includes('יחס ')) return 'gen-pct-row';
-    if (lbl.includes('עודף') || lbl.includes('גרעון')) {
-      // Find primary value to determine color
+    if (label.includes('סהכ') || label.includes('סה"כ')) return 'gen-subtotal';
+    if (label.includes('אחוז') || label.includes('יחס ')) return 'gen-pct-row';
+    if (label.includes('עודף') || label.includes('גרעון')) {
       const prioCols = cols.filter(c => !isPercentCol(c));
       for (const c of prioCols) {
         const v = row[c];
@@ -674,15 +680,23 @@
     return '';
   }
 
+  // Percentile → background class (higher = better assumed by default)
+  function pctRankBg(pctrank, higherIsBetter) {
+    if (pctrank === undefined || pctrank === null) return '';
+    const eff = higherIsBetter === false ? (100 - pctrank) : pctrank;
+    if (eff >= 75) return 'rank-bg-green';
+    if (eff >= 50) return 'rank-bg-blue';
+    if (eff >= 25) return 'rank-bg-yellow';
+    return 'rank-bg-red';
+  }
+
+  /* ── Render generic sheet ─────────────────────────────── */
   function renderGenericSheet(data) {
-    const container = document.getElementById('generic-container');
-    const panelHeader = document.getElementById('generic-panel-header');
-
-    // Panel title
+    const container  = document.getElementById('generic-container');
+    const panelHdr   = document.getElementById('generic-panel-header');
     const sheetLabel = sheetLabels[data.sheet] || data.sheet || 'גיליון';
-    panelHeader.textContent = sheetLabel;
+    panelHdr.textContent = sheetLabel;
 
-    // Report title
     document.getElementById('report-title-text').textContent =
       `${data.municipality} — ${sheetLabel}`;
     document.getElementById('report-subtitle').textContent =
@@ -694,9 +708,9 @@
     }
 
     const cols = data.columns;
-    const yc = data.year_cur, yp = data.year_prev;
+    const yc   = data.year_cur, yp = data.year_prev;
+    const hasRanks = data.analyst_mode && data.rows.some(r => r._ranks);
 
-    // Build table
     let html = '<table class="gen-table"><thead><tr>';
     html += '<th class="gen-th-label">שורה</th>';
     cols.forEach(c => {
@@ -705,13 +719,24 @@
     html += '</tr></thead><tbody>';
 
     data.rows.forEach(row => {
-      const cls = getGenericRowClass(row.label, row, cols);
+      const cls    = getGenericRowClass(row.label, row, cols);
+      const ranks  = row._ranks || {};
       html += `<tr${cls ? ` class="${cls}"` : ''}>`;
       html += `<td class="gen-td-label">${row.label}</td>`;
+
       cols.forEach(c => {
         const formatted = fmtGenericVal(row[c], c);
+        const rdata     = hasRanks ? ranks[c] : null;
+
         if (formatted === null) {
           html += '<td class="gen-td-null gen-td-num">—</td>';
+        } else if (rdata) {
+          const pr     = rdata.pctrank;
+          const bgCls  = pctRankBg(pr, !isPercentCol(c));
+          const arrow  = pr >= 50 ? '▲' : '▼';
+          const aColor = pr >= 75 ? '#15803d' : pr >= 50 ? '#2563eb' : pr >= 25 ? '#d97706' : '#dc2626';
+          const tip    = `דירוג: ${pr.toFixed(0)}% מהרשויות | חציון ארצי: ${fmtGenericVal(rdata.p50, c)} | n=${rdata.n}`;
+          html += `<td class="gen-td-num ${bgCls}" title="${tip}">${formatted}<span class="gen-rank-badge" style="color:${aColor}">${arrow}${Math.round(pr)}%</span></td>`;
         } else {
           html += `<td class="gen-td-num">${formatted}</td>`;
         }
@@ -723,7 +748,7 @@
     container.innerHTML = html;
   }
 
-  // ── Formatting ────────────────────────────────────────────
+  // ── Form2 formatting ──────────────────────────────────
   function fmtNum(v) {
     if (v === null || v === undefined || v === 0) return '—';
     return Math.round(v).toLocaleString('he-IL');
@@ -756,34 +781,25 @@
     return 'td-rank rank-low';
   }
 
-  // ── Render ────────────────────────────────────────────────
   function renderTable(tbodyId, rows, side) {
     const tbody = document.getElementById(tbodyId);
     tbody.innerHTML = '';
     let nMusnis = 0;
-
     rows.forEach((row, idx) => {
       const tr = document.createElement('tr');
       tr.className = `row-${row.type}`;
-      // mark rows that have sub_row children following them (only non-sub_rows)
       if (row.type !== 'sub_row' && rows[idx + 1] && rows[idx + 1].type === 'sub_row') {
         tr.classList.add('has-children');
       }
-
       if (row.type === 'section_header') {
-        // colspan = 9 total columns - 1 (td-num) = 8
         tr.innerHTML = `<td class="td-num">${row.num}</td><td colspan="8" class="td-label">${row.label}</td>`;
       } else {
         const cv = row.cur_val  ?? 0;
         const pv = row.prev_val ?? 0;
-        const cp = row.cur_pct;
-        const pp = row.prev_pct;
-        const ap = row.avg_pct;
-        const mp = row.median_pct;
-        const rk = row.rank;
-        const nm = row.n_munis;
+        const cp = row.cur_pct, pp = row.prev_pct;
+        const ap = row.avg_pct, mp = row.median_pct;
+        const rk = row.rank,    nm = row.n_munis;
         if (nm) nMusnis = nm;
-
         const rankStr = (rk && row.type !== 'grand_total') ? `${rk}` : '—';
         tr.innerHTML = `
           <td class="td-num">${row.num}</td>
@@ -796,8 +812,6 @@
           <td class="td-stat">${fmtStat(mp)}</td>
           <td class="${rankClass(rk, nm)}">${rankStr}</td>
         `;
-
-        // Make clickable if it has a key and is not grand_total
         if (row.key && row.type !== 'grand_total') {
           tr.classList.add('row-clickable');
           tr.addEventListener('click', () => openTB(row, side));
@@ -811,11 +825,9 @@
   function renderReport(data) {
     document.getElementById('report-title-text').textContent =
       `${data.municipality} — טופס מס׳ 2`;
-    // Restore form2 subtitle
     document.getElementById('report-subtitle').innerHTML =
       `נתוני ביצוע | שנת דוח <span id="year-cur-label">${data.year_cur}</span> | יחידות: אלפי ש"ח | דירוג מתוך <span id="n-munis">—</span> רשויות`;
-    // Update year labels everywhere
-    document.querySelectorAll('.hdr-cur').forEach(el => el.textContent = data.year_cur);
+    document.querySelectorAll('.hdr-cur').forEach(el => el.textContent  = data.year_cur);
     document.querySelectorAll('.hdr-prev').forEach(el => el.textContent = data.year_prev);
     const n = renderTable('tbody-receipts', data.receipts, 'receipts');
     renderTable('tbody-payments', data.payments, 'payments');
@@ -825,34 +837,112 @@
 
   function renderBalance(b, yearCur, yearPrev) {
     document.getElementById('balance-bar').style.display = '';
-
     function fmt(v) {
       if (v === null || v === undefined) return '—';
-      const abs = Math.abs(Math.round(v));
       const sign = v < 0 ? '−' : '';
-      return sign + abs.toLocaleString('he-IL');
+      return sign + Math.abs(Math.round(v)).toLocaleString('he-IL');
     }
-
     function setCell(id, v, colored) {
       const el = document.getElementById(id);
       el.textContent = fmt(v);
-      if (colored) {
+      if (colored)
         el.className = 'bal-num' + (v > 0 ? ' bal-positive' : v < 0 ? ' bal-negative' : '');
-      }
     }
-
     setCell('bal-rec-cur',      b.rec_cur,      false);
     setCell('bal-rec-prev',     b.rec_prev,     false);
     setCell('bal-pay-cur',      b.pay_cur,      false);
     setCell('bal-pay-prev',     b.pay_prev,     false);
     setCell('bal-surplus-cur',  b.surplus_cur,  true);
     setCell('bal-surplus-prev', b.surplus_prev, true);
-
     document.getElementById('bal-result-row').className =
       b.surplus_cur < 0 ? 'bal-deficit' : 'bal-result';
   }
 
-  // ── Top / Bottom modal ────────────────────────────────────
+  /* ── Analyst panel ────────────────────────────────────── */
+  function loadAnalystPanel(muni) {
+    analystPanel.style.display = '';
+    document.getElementById('analyst-loading').style.display = 'block';
+    document.getElementById('analyst-flags-container').innerHTML = '';
+    document.getElementById('analyst-flags-section').style.display = 'none';
+    document.getElementById('analyst-kpis-container').innerHTML = '';
+    document.getElementById('kpi-section-title').style.display = 'none';
+    document.getElementById('health-score-num').textContent = '—';
+
+    fetch(`/api/analyst/${encodeURIComponent(muni)}`)
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('analyst-loading').style.display = 'none';
+        document.getElementById('analyst-title').textContent =
+          `ניתוח פיננסי: ${data.municipality}`;
+        document.getElementById('analyst-subtitle').textContent =
+          `שנת ${data.year_cur} | השוואה מול ${data.n_munis} רשויות`;
+        document.getElementById('health-score-num').textContent = data.health_score;
+        // Color health score
+        const hw = document.getElementById('health-score-wrap');
+        hw.style.background = data.health_score >= 60 ? 'rgba(22,163,74,0.25)'
+                            : data.health_score >= 40 ? 'rgba(202,138,4,0.25)'
+                            : 'rgba(220,38,38,0.25)';
+        renderRedFlags(data.red_flags);
+        renderKpiCards(data.kpis);
+      })
+      .catch(() => {
+        document.getElementById('analyst-loading').style.display = 'none';
+        document.getElementById('analyst-kpis-container').innerHTML =
+          '<div style="padding:16px;color:#dc2626;font-size:0.82rem;">שגיאה בטעינת הניתוח</div>';
+      });
+  }
+
+  function renderRedFlags(flags) {
+    if (!flags || flags.length === 0) return;
+    const container = document.getElementById('analyst-flags-container');
+    const section   = document.getElementById('analyst-flags-section');
+    section.style.display = '';
+    const icons = { critical: '🚨', warning: '⚠️', note: 'ℹ️' };
+    container.innerHTML = flags.map(f => `
+      <div class="flag-card ${f.severity}">
+        <span class="flag-icon">${icons[f.severity] || 'ℹ️'}</span>
+        <div class="flag-content">
+          <div class="flag-title">${f.title}</div>
+          <div class="flag-detail">${f.detail}</div>
+          <div class="flag-category">${f.category}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderKpiCards(kpis) {
+    const container = document.getElementById('analyst-kpis-container');
+    const title     = document.getElementById('kpi-section-title');
+    title.style.display = '';
+    container.innerHTML = kpis.map(kpi => {
+      const pr  = kpi.pctrank;
+      const hib = kpi.higher_is_better;
+      let eff   = 50, cls = 'ok';
+      if (pr !== null && hib !== null) {
+        eff = hib ? pr : (100 - pr);
+        cls = eff >= 75 ? 'good' : eff >= 50 ? 'ok' : eff >= 25 ? 'warn' : 'bad';
+      }
+      const rankText  = pr !== null ? `דירוג: ${Math.round(pr)}% מהרשויות` : '';
+      const p50str    = kpi.p50 !== null ? `חציון ארצי: ${kpi.p50}${kpi.unit}` : '';
+      const valColor  = cls === 'good' ? '#15803d' : cls === 'ok' ? '#1d4ed8'
+                      : cls === 'warn' ? '#d97706' : '#dc2626';
+      return `
+        <div class="kpi-card">
+          <div class="kpi-label">${kpi.label}</div>
+          <div class="kpi-value" style="color:${valColor}">${kpi.value}${kpi.unit}</div>
+          ${pr !== null ? `
+            <div class="kpi-rank-bar">
+              <div class="kpi-rank-fill ${cls}" style="width:${eff.toFixed(0)}%"></div>
+            </div>
+            <div class="kpi-rank-label">${rankText}</div>
+          ` : ''}
+          ${p50str ? `<div class="kpi-p50-line">${p50str}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  /* ── Top / Bottom modal ────────────────────────────────── */
   const tbOverlay = document.getElementById('tb-overlay');
   const tbModal   = document.getElementById('tb-modal');
   const tbClose   = document.getElementById('tb-close');
@@ -864,12 +954,11 @@
     tbBody.innerHTML = '<div style="text-align:center;padding:24px;color:#94a3b8;">טוען...</div>';
     tbOverlay.classList.add('open');
     tbModal.classList.add('open');
-
     fetch(`/api/topbottom/${side}/${encodeURIComponent(row.key)}`)
       .then(r => r.json())
       .then(data => { tbBody.innerHTML = renderTBBody(data); })
       .catch(() => {
-        tbBody.innerHTML = '<div style="color:#dc2626;text-align:center;padding:12px;">שגיאה בטעינת הנתונים</div>';
+        tbBody.innerHTML = '<div style="color:#dc2626;text-align:center;padding:12px;">שגיאה</div>';
       });
   }
 
@@ -883,27 +972,17 @@
           <td>${item.muni}</td>
           <td class="td-pct">${item.pct.toFixed(1)}%</td>
         </tr>`).join('');
-      return `
-        <table class="tb-table">
-          <thead><tr>
-            <th class="td-r">#</th>
-            <th>רשות מקומית</th>
-            <th class="td-pct">%</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>`;
+      return `<table class="tb-table">
+        <thead><tr><th class="td-r">#</th><th>רשות מקומית</th><th class="td-pct">%</th></tr></thead>
+        <tbody>${rows}</tbody></table>`;
     }
-
     const zeroBlock = data.n_zero > 0 ? `
       <button class="tb-zero-btn" onclick="toggleZeros(this)">
         ⚪ הצג ${data.n_zero} רשויות עם ערך אפס ▾
       </button>
       <div class="tb-zero-section">
-        <ul class="tb-zero-list">
-          ${data.zeros.map(m => `<li>${m}</li>`).join('')}
-        </ul>
+        <ul class="tb-zero-list">${data.zeros.map(m => `<li>${m}</li>`).join('')}</ul>
       </div>` : '';
-
     return `
       <div class="tb-section tb-top">
         <div class="tb-subtitle">🏆 5 הרשויות עם השיעור הגבוה ביותר</div>
@@ -916,8 +995,7 @@
       <div class="tb-footer">
         סה"כ ${data.total} רשויות${data.n_zero > 0 ? ` | ${data.n_zero} עם ערך אפס` : ''}
         ${zeroBlock}
-      </div>
-    `;
+      </div>`;
   }
 
   function toggleZeros(btn) {
@@ -932,7 +1010,6 @@
     tbOverlay.classList.remove('open');
     tbModal.classList.remove('open');
   }
-
   tbClose.addEventListener('click', closeTB);
   tbOverlay.addEventListener('click', closeTB);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTB(); });

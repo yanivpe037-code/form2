@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מאגד חדשות ישראלי</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f0f4f8;
+      --card-bg: #ffffff;
+      --header-from: #0f2744;
+      --header-to: #1a3a5c;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --shadow-hover: 0 6px 24px rgba(0,0,0,0.14);
+      --tab-active: #1d4ed8;
+      --tab-active-bg: #eff6ff;
+      --radius: 14px;
+    }
+
+    body {
+      font-family: 'Heebo', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      direction: rtl;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      background: linear-gradient(135deg, var(--header-from), var(--header-to));
+      color: #fff;
+      padding: 28px 32px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    header .logo-icon {
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    header .subtitle {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.65);
+      margin-top: 2px;
+      font-weight: 300;
+    }
+
+    .header-meta {
+      text-align: left;
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.6);
+    }
+
+    #last-updated {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.65);
+    }
+
+    .refresh-btn {
+      margin-top: 6px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      padding: 5px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: 'Heebo', Arial, sans-serif;
+      font-size: 0.78rem;
+      transition: background 0.2s;
+      display: block;
+    }
+    .refresh-btn:hover { background: rgba(255,255,255,0.25); }
+
+    /* ─── TABS ─── */
+    .tabs-container {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 96px;
+      z-index: 90;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .tabs {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 26px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Heebo', Arial, sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab-btn .tab-icon { font-size: 1.2rem; }
+    .tab-btn:hover { color: var(--tab-active); background: var(--tab-active-bg); }
+    .tab-btn.active {
+      color: var(--tab-active);
+      border-bottom-color: var(--tab-active);
+      background: var(--tab-active-bg);
+    }
+
+    /* ─── MAIN CONTENT ─── */
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 28px 24px 48px;
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .panel-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 22px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* ─── NEWS GRID ─── */
+    .news-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .source-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: box-shadow 0.25s, transform 0.2s;
+    }
+    .source-card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+    }
+
+    .source-header {
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .source-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .source-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .source-link {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-decoration: none;
+      margin-right: auto;
+      margin-left: 0;
+    }
+    .source-link:hover { color: var(--tab-active); }
+
+    .headlines-list {
+      list-style: none;
+      padding: 8px 0;
+    }
+
+    .headline-item {
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .headline-item:last-child { border-bottom: none; }
+
+    .headline-link {
+      display: block;
+      padding: 10px 18px;
+      text-decoration: none;
+      color: #1e293b;
+      font-size: 0.9rem;
+      font-weight: 500;
+      line-height: 1.45;
+      transition: background 0.15s, color 0.15s;
+    }
+    .headline-link:hover {
+      background: #f8fafc;
+      color: var(--tab-active);
+    }
+
+    .error-card {
+      padding: 18px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    /* ─── TWEETS SECTION ─── */
+    .tweets-intro {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 22px 26px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .tweets-intro .x-icon {
+      font-size: 2rem;
+      background: #000;
+      border-radius: 50%;
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tweets-intro h2 { font-size: 1.1rem; font-weight: 700; }
+    .tweets-intro p  { font-size: 0.82rem; color: rgba(255,255,255,0.65); margin-top: 4px; }
+
+    .tweets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 22px;
+    }
+
+    .tweets-col-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tweet-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .tweet-col-header {
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tweet-col-label {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .tweet-search-link {
+      font-size: 0.75rem;
+      color: #1d9bf0;
+      text-decoration: none;
+      background: #e7f3fd;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    .tweet-search-link:hover { background: #cce5f7; }
+
+    .tweet-item {
+      padding: 14px 18px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .tweet-item:last-child { border-bottom: none; }
+
+    .tweet-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .tweet-header-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tweet-user {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .tweet-handle {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .tweet-text {
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .tweet-stats {
+      display: flex;
+      gap: 14px;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .tweet-api-note {
+      background: #fff8e1;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 0.82rem;
+      color: #92400e;
+      text-align: center;
+      margin-top: 12px;
+    }
+    .tweet-api-note a { color: #b45309; }
+
+    /* ─── LOADING SKELETON ─── */
+    .skeleton {
+      background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+      background-size: 400% 100%;
+      animation: shimmer 1.4s ease infinite;
+      border-radius: 6px;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .skeleton-card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    .skeleton-title { height: 18px; width: 50%; margin-bottom: 14px; }
+    .skeleton-line  { height: 13px; width: 100%; margin-bottom: 8px; }
+    .skeleton-line.short { width: 80%; }
+
+    /* ─── SPINNER ─── */
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 640px) {
+      header { padding: 18px 16px 14px; }
+      header h1 { font-size: 1.4rem; }
+      main { padding: 18px 12px 40px; }
+      .news-grid { grid-template-columns: 1fr; }
+      .tweets-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ HEADER ══════════════ -->
+<header>
+  <div class="brand">
+    <span class="logo-icon">📡</span>
+    <div>
+      <h1>מאגד חדשות ישראלי</h1>
+      <div class="subtitle">חדשות בזמן אמת מהמקורות המובילים</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div id="last-updated">טוען...</div>
+    <button class="refresh-btn" onclick="loadAll()">&#8635; רענן</button>
+  </div>
+</header>
+
+<!-- ══════════════ TABS ══════════════ -->
+<div class="tabs-container">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="news" onclick="switchTab('news', this)">
+      <span class="tab-icon">📰</span> אקטואליה
+    </button>
+    <button class="tab-btn" data-tab="economy" onclick="switchTab('economy', this)">
+      <span class="tab-icon">💹</span> כלכלה
+    </button>
+    <button class="tab-btn" data-tab="sports" onclick="switchTab('sports', this)">
+      <span class="tab-icon">⚽</span> ספורט
+    </button>
+    <button class="tab-btn" data-tab="tweets" onclick="switchTab('tweets', this)">
+      <span class="tab-icon">𝕏</span> ציוצים
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<main>
+
+  <!-- אקטואליה -->
+  <div id="panel-news" class="panel active">
+    <div class="panel-title">📰 כותרות אקטואליה</div>
+    <div id="grid-news" class="news-grid"></div>
+  </div>
+
+  <!-- כלכלה -->
+  <div id="panel-economy" class="panel">
+    <div class="panel-title">💹 כותרות כלכלה</div>
+    <div id="grid-economy" class="news-grid"></div>
+  </div>
+
+  <!-- ספורט -->
+  <div id="panel-sports" class="panel">
+    <div class="panel-title">⚽ כותרות ספורט</div>
+    <div id="grid-sports" class="news-grid"></div>
+  </div>
+
+  <!-- ציוצים -->
+  <div id="panel-tweets" class="panel">
+    <div class="tweets-intro">
+      <div class="x-icon">𝕏</div>
+      <div>
+        <h2>ציוצים מובילים בישראל</h2>
+        <p>חמשת הציוצים הנצפים ביותר בנושאי אקטואליה, כלכלה וספורט</p>
+      </div>
+    </div>
+    <div id="grid-tweets" class="tweets-grid"></div>
+  </div>
+
+</main>
+
+<script>
+// ══════════════════════════════════════════════════
+// SOURCE COLOR MAP
+// ══════════════════════════════════════════════════
+const SOURCE_COLORS = {
+  'ynet':       '#e63946',
+  'N12':        '#ff6900',
+  'כאן 11':    '#1e40af',
+  'וואלה':     '#7c3aed',
+  'הארץ':      '#0f766e',
+  'כלכליסט':   '#059669',
+  'דה מרקר':   '#d97706',
+  'גלובס':     '#0284c7',
+  'Bizportal':  '#be185d',
+  'וואלה ספורט':'#7c3aed',
+  'ספורט 5':   '#dc2626',
+  'One':        '#2563eb',
+};
+
+function colorFor(name) {
+  return SOURCE_COLORS[name] || '#475569';
+}
+
+// ══════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════
+function switchTab(tab, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════
+// SKELETON LOADER
+// ══════════════════════════════════════════════════
+function skeletonCards(count) {
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    html += `
+      <div class="skeleton-card">
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton skeleton-line short"></div>
+        <div class="skeleton skeleton-line"></div>
+      </div>`;
+  }
+  return html;
+}
+
+// ══════════════════════════════════════════════════
+// RENDER NEWS CARDS
+// ══════════════════════════════════════════════════
+function renderNewsGrid(gridId, results) {
+  const grid = document.getElementById(gridId);
+  if (!results || results.length === 0) {
+    grid.innerHTML = '<p style="color:#64748b;padding:20px">לא נמצאו כותרות</p>';
+    return;
+  }
+
+  grid.innerHTML = results.map(src => {
+    const color = colorFor(src.source);
+    const hasItems = src.items && src.items.length > 0;
+
+    const headlines = hasItems
+      ? src.items.map(item => `
+          <li class="headline-item">
+            <a class="headline-link" href="${item.link}" target="_blank" rel="noopener">
+              ${escHtml(item.title)}
+            </a>
+          </li>`).join('')
+      : `<li class="error-card">${src.error ? '⚠️ לא ניתן לטעון כותרות כרגע' : 'אין כותרות'}</li>`;
+
+    return `
+      <div class="source-card">
+        <div class="source-header">
+          <div class="source-dot" style="background:${color}"></div>
+          <span class="source-name" style="color:${color}">${escHtml(src.source)}</span>
+          ${src.site ? `<a class="source-link" href="${src.site}" target="_blank" rel="noopener">↗ לאתר</a>` : ''}
+        </div>
+        <ul class="headlines-list">${headlines}</ul>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════
+// RENDER TWEETS SECTION
+// ══════════════════════════════════════════════════
+const TWEET_TOPICS = [
+  {
+    key: 'news',
+    label: '📰 אקטואליה',
+    color: '#1d9bf0',
+    query: 'ישראל חדשות אקטואליה',
+    twitterSearch: 'https://twitter.com/search?q=%23ישראל+%23אקטואליה&src=typed_query&f=live',
+    tweets: [
+      { user: 'חדשות עכשיו',  handle: '@NewsNow_IL',  avatar: '📺', color: '#e63946', text: 'עקבו אחר ההתפתחויות האחרונות בשאלת שחרור החטופים – צוותי המשא ומתן שבים לקאהיר #חטופים #ישראל' },
+      { user: 'גיא זוהר',      handle: '@GuyZohar',    avatar: '🎙️', color: '#7c3aed', text: 'הממשלה מאשרת: ועדת חקירה ממלכתית על אירועי ה-7 באוקטובר – ההכרזה הרשמית צפויה מחר' },
+      { user: 'מרב מיכאלי',   handle: '@meravM',      avatar: '👤', color: '#0f766e', text: 'חוק הגיוס חוזר לוועדה – אנחנו לא נאפשר לממשלה לברוח מהאחריות. כולם חייבים לשרת 🇮🇱' },
+      { user: 'אמיר אורן',     handle: '@AmirOren',    avatar: '✍️', color: '#d97706', text: 'דיון חשוב: מה המשמעות האסטרטגית של הסכמי הפסקת האש לטווח הארוך? ניתוח בעמ׳ 4' },
+      { user: 'כאן חדשות',    handle: '@kann_news',   avatar: '📡', color: '#1e40af', text: 'עדכון: שוחררו שלושה חטופים נוספים בשלב הראשון של העסקה. צפו בסיקור החי' },
+    ]
+  },
+  {
+    key: 'economy',
+    label: '💹 כלכלה',
+    color: '#059669',
+    query: 'ישראל כלכלה פיננסים',
+    twitterSearch: 'https://twitter.com/search?q=%23כלכלה+%23ישראל&src=typed_query&f=live',
+    tweets: [
+      { user: 'גלובס',         handle: '@globes_co_il', avatar: '📈', color: '#0284c7', text: 'מדד המחירים לצרכן עלה ב-0.4% בחודש שעבר – האינפלציה ממשיכה להכביד על הצרכן הישראלי #כלכלה' },
+      { user: 'רונן מנחם',    handle: '@RonenMenachem', avatar: '💰', color: '#059669', text: 'הריבית נותרת ללא שינוי ב-4.5%. בנק ישראל: "הצמיחה מתמתנת, אך שוק העבודה יציב" #בנקישראל' },
+      { user: 'דה מרקר',      handle: '@TheMarker',   avatar: '📊', color: '#d97706', text: 'הטק הישראלי מצליח: גיוסי ההון ב-2024 חצו את ה-8 מיליארד דולר – ענף ה-AI מוביל #היטק' },
+      { user: 'כלכליסט',     handle: '@calcalist',   avatar: '🏦', color: '#be185d', text: 'מיסוי דיגיטל: ישראל מצטרפת למדינות שידרשו מגוגל ומטא להגיש דוחות מפורטים לרשות המסים' },
+      { user: 'אתי אבישר',    handle: '@EtiAvishar',  avatar: '👩‍💼', color: '#7c3aed', text: 'שוק הנדל"ן: מחירי הדירות ממשיכים לעלות למרות הריבית הגבוהה – מחסור בהיצע הוא הגורם המרכזי' },
+    ]
+  },
+  {
+    key: 'sports',
+    label: '⚽ ספורט',
+    color: '#dc2626',
+    query: 'ישראל ספורט',
+    twitterSearch: 'https://twitter.com/search?q=%23ספורט+%23ישראל&src=typed_query&f=live',
+    tweets: [
+      { user: 'ספורט 5',       handle: '@sport5',      avatar: '⚽', color: '#dc2626', text: 'מכבי תל אביב ניצחה 3-1 את הפועל חיפה ועולה לראש הטבלה. כפר הנגיד שוחק בצורה מעולה! 🔥 #ליגת העל' },
+      { user: 'One ספורט',      handle: '@one_sport',   avatar: '🏆', color: '#2563eb', text: 'נבחרת ישראל בכדורגל: תוצאות גרועות בליגת האומות – האם צריך לשקול החלפת מאמן? #נבחרת' },
+      { user: 'אלי ציפורי',    handle: '@EliZipori',   avatar: '🎙️', color: '#7c3aed', text: 'מוסר הנבחרת שבור. ה-7/10 השפיע על השחקנים יותר ממה שהודו. צריך לדבר על זה בגלוי.' },
+      { user: 'וואלה ספורט',   handle: '@walla_sport', avatar: '🏅', color: '#7c3aed', text: 'ענת דרייגור מסיימת קריירה מדהימה: "קיבלתי יותר ממה שציפיתי מהספורט" – ראיון בלעדי 🤸‍♀️' },
+      { user: 'אמיר נחמני',   handle: '@AmirNachmani', avatar: '🏋️', color: '#0f766e', text: 'הפועל ב״ש מגיעה לאירופה בליגת ה-UEL! ניצחון דרמטי 2-1 על קבוצה מהולנד. היסטוריה! 🇮🇱🌍' },
+    ]
+  }
+];
+
+function renderTweets() {
+  const grid = document.getElementById('grid-tweets');
+  grid.innerHTML = TWEET_TOPICS.map(topic => {
+    const tweetsHtml = topic.tweets.map(t => `
+      <div class="tweet-item">
+        <div class="tweet-header-row">
+          <div class="tweet-avatar" style="background:${t.color}">${t.avatar}</div>
+          <div>
+            <div class="tweet-user">${escHtml(t.user)}</div>
+            <div class="tweet-handle">${escHtml(t.handle)}</div>
+          </div>
+        </div>
+        <div class="tweet-text">${escHtml(t.text)}</div>
+        <div class="tweet-stats">
+          <span>❤️ ${Math.floor(Math.random()*900+100)}</span>
+          <span>🔁 ${Math.floor(Math.random()*300+20)}</span>
+          <span>💬 ${Math.floor(Math.random()*80+5)}</span>
+        </div>
+      </div>`).join('');
+
+    return `
+      <div class="tweet-card">
+        <div class="tweet-col-header">
+          <span class="tweet-col-label" style="color:${topic.color}">${topic.label}</span>
+          <a class="tweet-search-link" href="${topic.twitterSearch}" target="_blank" rel="noopener">חפש ב-𝕏</a>
+        </div>
+        ${tweetsHtml}
+      </div>`;
+  }).join('');
+
+  // Add API note
+  grid.innerHTML += `
+    <div class="tweet-api-note" style="grid-column:1/-1">
+      <strong>💡 שים לב:</strong> הציוצים המוצגים כאן הם לצורך הדגמה.
+      לציוצים חיים בזמן אמת, לחץ על "חפש ב-𝕏" בכל קטגוריה,
+      או <a href="https://developer.twitter.com/en/portal/dashboard" target="_blank" rel="noopener">הוסף Twitter API Bearer Token</a> לשרת.
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════
+// FETCH NEWS FROM BACKEND
+// ══════════════════════════════════════════════════
+async function fetchCategory(cat) {
+  const resp = await fetch(`/api/headlines?cat=${cat}`);
+  if (!resp.ok) throw new Error('Network error');
+  return resp.json();
+}
+
+async function loadAll() {
+  const btn = document.querySelector('.refresh-btn');
+  const upd = document.getElementById('last-updated');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  // Show skeletons
+  document.getElementById('grid-news').innerHTML    = skeletonCards(5);
+  document.getElementById('grid-economy').innerHTML = skeletonCards(4);
+  document.getElementById('grid-sports').innerHTML  = skeletonCards(3);
+
+  try {
+    const [news, economy, sports] = await Promise.all([
+      fetchCategory('news'),
+      fetchCategory('economy'),
+      fetchCategory('sports'),
+    ]);
+
+    renderNewsGrid('grid-news',    news);
+    renderNewsGrid('grid-economy', economy);
+    renderNewsGrid('grid-sports',  sports);
+    renderTweets();
+
+    const now = new Date();
+    upd.textContent = 'עודכן: ' + now.toLocaleTimeString('he-IL', { hour:'2-digit', minute:'2-digit' });
+  } catch (err) {
+    ['grid-news','grid-economy','grid-sports'].forEach(id => {
+      document.getElementById(id).innerHTML =
+        '<p style="color:#dc2626;padding:20px">⚠️ שגיאה בטעינת הנתונים. נסה שוב.</p>';
+    });
+    upd.textContent = 'שגיאה בטעינה';
+  } finally {
+    btn.innerHTML = '&#8635; רענן';
+    btn.disabled = false;
+  }
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+loadAll();
+</script>
+</body>
+</html>

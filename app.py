@@ -913,6 +913,95 @@ def get_analyst(municipality):
     })
 
 
+# ============================================================
+# News Aggregator
+# ============================================================
+import requests as _req
+import xml.etree.ElementTree as ET
+import concurrent.futures
+
+_NEWS_SOURCES = [
+    {'name': 'ynet',   'url': 'https://www.ynet.co.il/Integration/StoryRss2.xml',                                               'count': 4, 'site': 'https://www.ynet.co.il'},
+    {'name': 'N12',    'url': 'https://www.mako.co.il/rss/31750a2610f26110VgnVCM1000005201000aRCRD.xml',                        'count': 4, 'site': 'https://www.n12.co.il'},
+    {'name': 'כאן 11', 'url': 'https://www.kan.org.il/rss/',                                                                   'count': 4, 'site': 'https://www.kan.org.il'},
+    {'name': 'וואלה',  'url': 'https://rss.walla.co.il/feed/1',                                                                'count': 4, 'site': 'https://walla.co.il'},
+    {'name': 'הארץ',   'url': 'https://www.haaretz.co.il/cmlink/1.1599',                                                       'count': 4, 'site': 'https://www.haaretz.co.il'},
+]
+
+_ECONOMY_SOURCES = [
+    {'name': 'כלכליסט',  'url': 'https://www.calcalist.co.il/rss/AjaxPage,7340,L-ArticleRssHomePage,00.xml',                 'count': 5, 'site': 'https://www.calcalist.co.il'},
+    {'name': 'דה מרקר',  'url': 'https://www.themarker.com/srv/themarker-home',                                              'count': 5, 'site': 'https://www.themarker.com'},
+    {'name': 'גלובס',    'url': 'https://www.globes.co.il/webservice/rss/rssfeeds.asmx/GetFeedContent?fromDate=01%2F01%2F2010&catid=1', 'count': 5, 'site': 'https://www.globes.co.il'},
+    {'name': 'Bizportal','url': 'https://www.bizportal.co.il/rss/home',                                                       'count': 5, 'site': 'https://www.bizportal.co.il'},
+]
+
+_SPORTS_SOURCES = [
+    {'name': 'וואלה ספורט', 'url': 'https://rss.walla.co.il/feed/2',    'count': 4, 'site': 'https://sport.walla.co.il'},
+    {'name': 'ספורט 5',     'url': 'https://www.sport5.co.il/rss.aspx', 'count': 4, 'site': 'https://www.sport5.co.il'},
+    {'name': 'One',         'url': 'https://www.one.co.il/rss/',         'count': 4, 'site': 'https://www.one.co.il'},
+]
+
+_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+}
+
+
+def _parse_rss(content_bytes, count):
+    items = []
+    try:
+        root = ET.fromstring(content_bytes)
+        for item in root.iter('item'):
+            if len(items) >= count:
+                break
+            title = (item.findtext('title') or '').strip()
+            link  = (item.findtext('link')  or item.findtext('guid') or '').strip()
+            if title:
+                items.append({'title': title, 'link': link})
+        if not items:
+            atom = 'http://www.w3.org/2005/Atom'
+            for entry in root.iter(f'{{{atom}}}entry'):
+                if len(items) >= count:
+                    break
+                title = (entry.findtext(f'{{{atom}}}title') or '').strip()
+                le = entry.find(f'{{{atom}}}link')
+                link = le.get('href', '') if le is not None else ''
+                if title:
+                    items.append({'title': title, 'link': link})
+    except ET.ParseError:
+        pass
+    return items
+
+
+def _fetch_rss(source):
+    try:
+        resp = _req.get(source['url'], headers=_HEADERS, timeout=10)
+        resp.raise_for_status()
+        items = _parse_rss(resp.content, source['count'])
+        return {'source': source['name'], 'site': source.get('site', ''), 'items': items}
+    except Exception:
+        return {'source': source['name'], 'site': source.get('site', ''), 'items': [], 'error': True}
+
+
+@app.route('/news')
+def news_page():
+    return render_template('news.html')
+
+
+@app.route('/api/headlines')
+def api_headlines():
+    cat = request.args.get('cat', 'news')
+    sources_map = {
+        'news':    _NEWS_SOURCES,
+        'economy': _ECONOMY_SOURCES,
+        'sports':  _SPORTS_SOURCES,
+    }
+    sources = sources_map.get(cat, [])
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        results = list(executor.map(_fetch_rss, sources))
+    return jsonify(results)
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5003))
     app.run(host='0.0.0.0', debug=False, port=port)

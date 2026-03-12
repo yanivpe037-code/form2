@@ -913,6 +913,102 @@ def get_analyst(municipality):
     })
 
 
+# ---------------------------------------------------------------------------
+# Health & Nutrition Tracker
+# ---------------------------------------------------------------------------
+@app.route('/health')
+def health_tracker():
+    return render_template('health_tracker.html')
+
+
+@app.route('/api/health/google-calendar-event', methods=['POST'])
+def create_calendar_event():
+    """Generate a Google Calendar event URL for health reminders."""
+    data = request.get_json() or {}
+    title = data.get('title', 'תזכורת בריאות')
+    description = data.get('description', 'תזכורת לאכילה בריאה ושתיית מים')
+    recurrence = data.get('recurrence', 'DAILY')
+
+    from datetime import datetime, timedelta
+    now = datetime.utcnow()
+    start = now.replace(hour=8, minute=0, second=0).strftime('%Y%m%dT%H%M%SZ')
+    end = now.replace(hour=8, minute=30, second=0).strftime('%Y%m%dT%H%M%SZ')
+
+    import urllib.parse
+    params = {
+        'action': 'TEMPLATE',
+        'text': title,
+        'details': description,
+        'dates': f'{start}/{end}',
+        'recur': f'RRULE:FREQ={recurrence};COUNT=90',
+    }
+    url = 'https://calendar.google.com/calendar/render?' + urllib.parse.urlencode(params)
+    return jsonify({'url': url})
+
+
+@app.route('/api/health/google-tasks-url')
+def google_tasks_url():
+    """Return URL to create health tasks in Google Tasks."""
+    return jsonify({
+        'url': 'https://tasks.google.com/embed/?origin=https://calendar.google.com',
+        'tasks': [
+            'לקנות פירות וירקות לשבוע',
+            'להכין ארוחות בריאות מראש',
+            'למלא בקבוק מים',
+            'להוציא חטיפים מהבית',
+            'לחתוך ירקות לעבודה',
+        ]
+    })
+
+
+@app.route('/api/health/gmail-reminder', methods=['POST'])
+def gmail_reminder():
+    """Generate a Gmail compose URL with health reminder."""
+    data = request.get_json() or {}
+    email = data.get('email', '')
+    subject = data.get('subject', 'תזכורת בריאות יומית')
+    body = data.get('body', '''היי!
+
+תזכורת יומית:
+- שתית 8 כוסות מים?
+- אכלת 5 מנות פירות וירקות?
+- לא נגעת במתוקים?
+- הכנת אוכל בריא ליום?
+
+אתה יכול! כבר עשית את זה פעם!
+''')
+    import urllib.parse
+    params = {
+        'view': 'cm',
+        'to': email,
+        'su': subject,
+        'body': body,
+    }
+    url = 'https://mail.google.com/mail/?'  + urllib.parse.urlencode(params)
+    return jsonify({'url': url})
+
+
+@app.route('/api/health/keep-note')
+def keep_note_url():
+    """Return Google Keep URL and suggested notes."""
+    return jsonify({
+        'url': 'https://keep.google.com/',
+        'notes': [
+            {
+                'title': 'רשימת קניות בריאה',
+                'items': ['תפוחים', 'בננות', 'מלפפונים', 'עגבניות', 'גזר',
+                          'ברוקולי', 'חזה עוף', 'ביצים', 'שקדים', 'טונה']
+            },
+            {
+                'title': 'כללי ברזל לתזונה',
+                'items': ['לא אוכל שאריות של הילדים', 'לא חטיפים מהעבודה',
+                          'שותה מים לפני כל ארוחה', 'ירקות חתוכים תמיד מוכנים',
+                          'לא קונה מתוקים לבית']
+            }
+        ]
+    })
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5003))
     app.run(host='0.0.0.0', debug=False, port=port)

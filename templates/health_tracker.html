@@ -82,9 +82,21 @@
 
         .motivation-popup.aggressive {
             border-color: #e74c3c;
-            box-shadow: 0 0 60px rgba(231, 76, 60, 0.5);
-            animation: shake 0.5s ease;
+            border-width: 5px;
+            box-shadow: 0 0 80px rgba(231, 76, 60, 0.7), 0 0 200px rgba(231, 76, 60, 0.3);
+            animation: aggressiveShake 0.8s ease infinite;
         }
+
+        .motivation-popup.nuclear {
+            border-color: #ff0000;
+            border-width: 6px;
+            box-shadow: 0 0 100px rgba(255, 0, 0, 0.8), 0 0 300px rgba(255, 0, 0, 0.4);
+            animation: nuclearShake 0.3s ease infinite;
+            background: linear-gradient(135deg, #1a0000, #2d0000) !important;
+        }
+
+        .motivation-popup.nuclear h2 { color: #ff4444 !important; font-size: 2.2rem !important; }
+        .motivation-popup.nuclear .emoji { font-size: 5rem !important; animation: spin 1s linear infinite; }
 
         @keyframes popIn {
             from { transform: translate(-50%, -50%) scale(0); opacity: 0; }
@@ -95,6 +107,188 @@
             0%, 100% { transform: translate(-50%, -50%) rotate(0); }
             25% { transform: translate(-50%, -50%) rotate(-3deg); }
             75% { transform: translate(-50%, -50%) rotate(3deg); }
+        }
+
+        @keyframes aggressiveShake {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0) scale(1); }
+            10% { transform: translate(-50%, -50%) rotate(-5deg) scale(1.02); }
+            20% { transform: translate(-50%, -50%) rotate(5deg) scale(1.02); }
+            30% { transform: translate(-50%, -50%) rotate(-5deg) scale(1); }
+            40% { transform: translate(-50%, -50%) rotate(5deg) scale(1); }
+            50% { transform: translate(-50%, -50%) rotate(0) scale(1.05); }
+        }
+
+        @keyframes nuclearShake {
+            0% { transform: translate(-50%, -50%) translate(0, 0) rotate(0); }
+            25% { transform: translate(-50%, -50%) translate(-5px, 3px) rotate(-2deg); }
+            50% { transform: translate(-50%, -50%) translate(5px, -3px) rotate(2deg); }
+            75% { transform: translate(-50%, -50%) translate(-3px, -5px) rotate(-1deg); }
+            100% { transform: translate(-50%, -50%) translate(3px, 5px) rotate(1deg); }
+        }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        @keyframes redPulse {
+            0%, 100% { background: rgba(255,0,0,0); }
+            50% { background: rgba(255,0,0,0.15); }
+        }
+
+        @keyframes borderFlash {
+            0%, 100% { border-color: transparent; }
+            50% { border-color: #ff0000; }
+        }
+
+        /* Full screen takeover */
+        .fullscreen-takeover {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #000;
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 40px;
+            animation: redPulse 1s ease-in-out infinite;
+        }
+
+        .fullscreen-takeover.active { display: flex; }
+
+        .fullscreen-takeover .mega-emoji {
+            font-size: 8rem;
+            animation: spin 2s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .fullscreen-takeover h1 {
+            font-size: 3rem;
+            color: #ff4444;
+            font-weight: 900;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255,0,0,0.5);
+            animation: aggressiveShake 0.5s ease infinite;
+        }
+
+        .fullscreen-takeover p {
+            font-size: 1.5rem;
+            color: #ff9999;
+            line-height: 2;
+            max-width: 600px;
+        }
+
+        .fullscreen-takeover .dismiss-btn {
+            margin-top: 30px;
+            padding: 15px 50px;
+            background: #e74c3c;
+            border: 3px solid #ff6666;
+            border-radius: 40px;
+            color: #fff;
+            font-size: 1.3rem;
+            font-weight: 900;
+            cursor: pointer;
+            font-family: 'Heebo', sans-serif;
+            animation: borderFlash 1s ease infinite;
+        }
+
+        /* Confession modal */
+        .confession-modal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #2d0000, #1a0000);
+            border: 4px solid #ff4444;
+            border-radius: 20px;
+            padding: 40px;
+            z-index: 11000;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 0 100px rgba(255, 0, 0, 0.5);
+        }
+
+        .confession-modal h2 { color: #ff4444; font-size: 2rem; margin-bottom: 15px; }
+        .confession-modal p { color: #ff9999; margin-bottom: 20px; font-size: 1.1rem; line-height: 1.8; }
+
+        .confession-modal .confession-btns {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .confession-modal button {
+            padding: 12px 25px;
+            border: 2px solid;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Heebo', sans-serif;
+        }
+
+        .confession-modal .btn-clean {
+            background: #27ae60;
+            border-color: #27ae60;
+            color: #fff;
+        }
+
+        .confession-modal .btn-sin {
+            background: #e74c3c;
+            border-color: #e74c3c;
+            color: #fff;
+        }
+
+        /* Panic button */
+        .panic-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 70px;
+            height: 70px;
+            background: #e74c3c;
+            border: 4px solid #ff6666;
+            border-radius: 50%;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 500;
+            animation: panicPulse 2s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(231, 76, 60, 0.5);
+        }
+
+        @keyframes panicPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(231, 76, 60, 0.5); }
+            50% { transform: scale(1.1); box-shadow: 0 0 50px rgba(231, 76, 60, 0.8); }
+        }
+
+        /* Scrolling ticker */
+        .ticker {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+            color: #fff;
+            padding: 8px 0;
+            z-index: 400;
+            overflow: hidden;
+            font-weight: 700;
+        }
+
+        .ticker-content {
+            display: inline-block;
+            white-space: nowrap;
+            animation: ticker 30s linear infinite;
+        }
+
+        @keyframes ticker {
+            from { transform: translateX(100vw); }
+            to { transform: translateX(-100%); }
         }
 
         .motivation-popup .emoji { font-size: 4rem; margin-bottom: 15px; }
@@ -510,6 +704,37 @@
 
 <div class="top-banner" id="topBanner" onclick="showRandomMotivation()">
     טוען הודעת מוטיבציה...
+</div>
+
+<!-- Full Screen Takeover -->
+<div class="fullscreen-takeover" id="fullscreenTakeover">
+    <div class="mega-emoji" id="takeoverEmoji">🚨</div>
+    <h1 id="takeoverTitle">עצור!</h1>
+    <p id="takeoverMessage">...</p>
+    <button class="dismiss-btn" id="takeoverDismiss" onclick="dismissTakeover()">הבנתי! אני מפסיק!</button>
+</div>
+
+<!-- Confession Modal -->
+<div class="overlay" id="confessionOverlay" style="z-index:10999"></div>
+<div class="confession-modal" id="confessionModal">
+    <h2>🔥 וידוי יומי</h2>
+    <p id="confessionQuestion">האם אכלת משהו לא בריא היום?</p>
+    <div class="confession-btns">
+        <button class="btn-clean" onclick="confess(false)">🏆 לא! יום נקי!</button>
+        <button class="btn-sin" onclick="confess(true)">😔 כן... נפלתי</button>
+    </div>
+</div>
+
+<!-- Panic Button -->
+<div class="panic-btn" id="panicBtn" onclick="panicMode()" title="לחץ כשאתה מתפתה!">
+    🆘
+</div>
+
+<!-- Scrolling Ticker -->
+<div class="ticker">
+    <div class="ticker-content" id="tickerContent">
+        🚫 אל תאכל מתוקים! 💧 שתה מים עכשיו! 🥗 אכלת ירקות? 💪 אתה חזק מהחטיף! 👖 תחשוב על הג'ינס! 🔥 כל יום נקי = ניצחון! 🚫 שאריות ילדים = לא שלך! ⚠️ סוכר = רעל! 🫖 תכין תה! 📏 המכנסיים לא משקרים! 🏋️ הגוף שלך הוא הנכס הכי יקר! 🤬 30 שניות בפה, שבוע על הבטן! 👨‍👧‍👦 הילדים צריכים אבא בריא! 🛑 עצור לפני שאתה אוכל! 🧠 המוח משקר לך! 🪤 סוכר ממכר כמו סם! 💀 כל ממתק מקצר חיים! 🏖️ הקיץ בא! 📵 מחק את אפליקציות המשלוחים! 🔪 תחתוך ירקות עכשיו!
+    </div>
 </div>
 
 <div class="overlay" id="overlay" onclick="closePopup()"></div>
@@ -1118,14 +1343,196 @@ function showMotivation(msg) {
     document.getElementById('popupEmoji').textContent = msg.emoji;
     document.getElementById('popupTitle').textContent = msg.title;
     document.getElementById('popupMessage').textContent = msg.message;
-    popup.className = 'motivation-popup' + (msg.aggressive ? ' aggressive' : '');
+
+    // Nuclear mode for extra aggressive messages
+    if (msg.nuclear) {
+        popup.className = 'motivation-popup nuclear';
+    } else if (msg.aggressive) {
+        popup.className = 'motivation-popup aggressive';
+    } else {
+        popup.className = 'motivation-popup';
+    }
+
     popup.style.display = 'block';
     document.getElementById('overlay').style.display = 'block';
+
+    // Play sound alert for aggressive messages
+    if (msg.aggressive || msg.nuclear) {
+        playAlertSound(msg.nuclear ? 'nuclear' : 'aggressive');
+    }
 }
 
 function closePopup() {
     document.getElementById('motivationPopup').style.display = 'none';
     document.getElementById('overlay').style.display = 'none';
+}
+
+// ============================================================
+// SOUND ALERTS (Web Audio API)
+// ============================================================
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playAlertSound(type) {
+    try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        if (type === 'nuclear') {
+            // Alarm siren
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.3);
+                    osc.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 0.6);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.6);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.6);
+                }, i * 700);
+            }
+        } else {
+            // Alert beep
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'square';
+            osc.frequency.value = 600;
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+    } catch(e) { /* audio not available */ }
+}
+
+// ============================================================
+// PANIC BUTTON — press when tempted!
+// ============================================================
+function panicMode() {
+    const takeover = document.getElementById('fullscreenTakeover');
+    const panicMessages = [
+        { emoji: "🚨", title: "עצור עכשיו!!!", message: "שים את האוכל למטה! תנשום עמוק! תשתה כוס מים! תחכה 60 שניות! הרעב הזה מזויף והוא ייעלם!" },
+        { emoji: "💪", title: "אתה חזק מזה!!!", message: "כל הדרך עד לפה? ותפסיד בגלל חטיף עלוב אחד?! אתה מלך! אתה לוחם! אל תיכנע!" },
+        { emoji: "🔥", title: "תשרוף את הפיתוי!!!", message: "תסגור עיניים. תנשום. תספור עד 10. עכשיו תפקח עיניים ותגיד: אני לא צריך את זה! אני חזק יותר!" },
+        { emoji: "👨‍👧‍👦", title: "תחשוב על הילדים!!!", message: "הם צריכים אבא בריא שירוץ איתם, ישחק איתם, יהיה שם בשבילם. כל חטיף גונב מהם עוד רגע. שווה?!" },
+        { emoji: "🪦", title: "סוכרת. לחץ דם. לב.", message: "זה מה שמחכה אם לא תעצור עכשיו. זה לא הפחדה — זה מציאות. גבר בן 40 שאוכל שטויות משחק ברולטה רוסית. עצור!" },
+        { emoji: "🤬", title: "מה אתה עושה?!?!", message: "אתה באמת עומד לזרוק הכל?! את כל המאמץ?! את כל הימים הנקיים?! בשביל 30 שניות של טעם?! שים את זה למטה! עכשיו!!!" },
+    ];
+    const msg = panicMessages[Math.floor(Math.random() * panicMessages.length)];
+
+    document.getElementById('takeoverEmoji').textContent = msg.emoji;
+    document.getElementById('takeoverTitle').textContent = msg.title;
+    document.getElementById('takeoverMessage').textContent = msg.message;
+    takeover.classList.add('active');
+
+    playAlertSound('nuclear');
+
+    // Start countdown to force read
+    let countdown = 15;
+    const btn = document.getElementById('takeoverDismiss');
+    btn.disabled = true;
+    btn.style.opacity = '0.3';
+    const interval = setInterval(() => {
+        countdown--;
+        btn.textContent = `תקרא! תנשום! (${countdown})`;
+        if (countdown <= 0) {
+            clearInterval(interval);
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.textContent = '💪 הבנתי! אני חזק!';
+        }
+    }, 1000);
+}
+
+function dismissTakeover() {
+    document.getElementById('fullscreenTakeover').classList.remove('active');
+    showMotivation({
+        emoji: "🏆",
+        title: "ניצחת את הפיתוי!",
+        message: "מצוין! עצרת, נשמת, והתגברת. זה בדיוק השריר שאתה בונה — כוח רצון. כל פעם שאתה עוצר, אתה מתחזק!",
+        aggressive: false
+    });
+    state.snacksRejected++;
+    saveState();
+    updateStats();
+}
+
+// ============================================================
+// CONFESSION SYSTEM — daily check-in
+// ============================================================
+function showConfession() {
+    const questions = [
+        'האם אכלת מתוקים או חטיפים היום?',
+        'האם אכלת שאריות של הילדים?',
+        'האם לקחת חטיפים מהעבודה?',
+        'האם שתית שתייה מתוקה?',
+        'האם אכלת לחם לבן או פחמימות כבדות?',
+        'האם הזמנת משלוח אוכל?',
+        'האם אכלת אחרי 8 בערב?',
+    ];
+    document.getElementById('confessionQuestion').textContent =
+        questions[Math.floor(Math.random() * questions.length)];
+    document.getElementById('confessionModal').style.display = 'block';
+    document.getElementById('confessionOverlay').style.display = 'block';
+}
+
+function confess(sinned) {
+    document.getElementById('confessionModal').style.display = 'none';
+    document.getElementById('confessionOverlay').style.display = 'none';
+
+    if (sinned) {
+        // NUCLEAR response
+        const takeover = document.getElementById('fullscreenTakeover');
+        document.getElementById('takeoverEmoji').textContent = '😤';
+        document.getElementById('takeoverTitle').textContent = 'אתה חייב להפסיק!';
+        document.getElementById('takeoverMessage').textContent =
+            'אוקיי, נפלת. זה קורה. אבל עכשיו — עצור! לא עוד היום! ' +
+            'תשתה כוס מים עכשיו, תחתוך ירקות, ותתחיל מחדש מהרגע הזה. ' +
+            'לא מחר — עכשיו! כל רגע הוא הזדמנות חדשה. אתה יותר חזק מהנפילה הזאת!';
+        takeover.classList.add('active');
+        playAlertSound('nuclear');
+
+        let countdown = 20;
+        const btn = document.getElementById('takeoverDismiss');
+        btn.disabled = true;
+        btn.style.opacity = '0.3';
+        const interval = setInterval(() => {
+            countdown--;
+            btn.textContent = `תקרא! תפנים! (${countdown})`;
+            if (countdown <= 0) {
+                clearInterval(interval);
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.textContent = '💪 מתחיל מחדש — עכשיו!';
+            }
+        }, 1000);
+
+        // Reset streak
+        state.streak = 0;
+        state.daysWithoutSweets = 0;
+        saveState();
+        updateStats();
+    } else {
+        // Celebration!
+        state.streak++;
+        state.daysWithoutSweets++;
+        state.lastCleanDay = new Date().toDateString();
+        saveState();
+        updateStats();
+        showMotivation({
+            emoji: "🏆",
+            title: `${state.streak} ימים נקיים!!! 🔥🔥🔥`,
+            message: "אלוף אמיתי! כל יום נקי הוא ניצחון ענק! אתה מוכיח שאתה חזק, ממוקד, ורציני! המשך ככה ושום דבר לא יעצור אותך!",
+            nuclear: false,
+            aggressive: false
+        });
+        playAlertSound('aggressive'); // celebratory beep
+    }
 }
 
 function showRandomMotivation() {
@@ -1607,6 +2014,9 @@ function init() {
     checkCleanDay();
     startTimeAwareReminders();
     startFullScreenAlarm();
+    startConfessionSystem();
+    startNuclearMode();
+    updateTicker();
 }
 
 // ============================================================
@@ -1645,32 +2055,207 @@ function startTimeAwareReminders() {
 // FULL SCREEN ALARM (super aggressive)
 // ============================================================
 function startFullScreenAlarm() {
-    // Every 3 minutes, flash the page border red for a moment
+    // Every 2 minutes, flash the page border red
     setInterval(() => {
-        document.body.style.outline = '4px solid #e74c3c';
-        document.body.style.outlineOffset = '-4px';
+        document.body.style.outline = '6px solid #e74c3c';
+        document.body.style.outlineOffset = '-6px';
+        document.body.style.animation = 'redPulse 0.5s ease 4';
         setTimeout(() => {
             document.body.style.outline = 'none';
-        }, 2000);
-    }, 3 * 60 * 1000);
+            document.body.style.animation = '';
+        }, 3000);
+    }, 2 * 60 * 1000);
 
-    // Every 7 minutes, shake the banner
+    // Every 4 minutes, AGGRESSIVE banner takeover
     setInterval(() => {
         const banner = document.getElementById('topBanner');
-        banner.style.animation = 'shake 0.5s ease 3';
+        banner.style.animation = 'nuclearShake 0.3s ease infinite';
         banner.style.background = '#e74c3c';
         banner.style.color = '#fff';
-        banner.style.fontSize = '1.3rem';
-        banner.textContent = '🚨🚨🚨 שתית מים?! אכלת ירקות?! לא נגעת בחטיף?! 🚨🚨🚨';
+        banner.style.fontSize = '1.4rem';
+        banner.style.padding = '18px';
+        const msgs = [
+            '🚨🚨🚨 שתית מים?! אכלת ירקות?! לא נגעת בחטיף?! 🚨🚨🚨',
+            '⚠️⚠️⚠️ עצור! תבדוק את עצמך! שתיית מים? אוכל בריא? ⚠️⚠️⚠️',
+            '🔥🔥🔥 אל תוותר! אתה במסע! כל רגע הוא בחירה! 🔥🔥🔥',
+            '💀💀💀 סוכר = רעל! חטיפים = אויב! מים = חיים! 💀💀💀',
+            '🤬🤬🤬 אם יש חטיף ביד שלך — שים אותו למטה עכשיו! 🤬🤬🤬',
+            '👖👖👖 תחשוב על הג\'ינס! תחשוב על הבגדים! תחשוב על עצמך! 👖👖👖',
+        ];
+        banner.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+        playAlertSound('aggressive');
         setTimeout(() => {
             banner.style.animation = '';
             banner.style.background = '';
             banner.style.color = '';
             banner.style.fontSize = '';
+            banner.style.padding = '';
             rotateBanner();
-        }, 5000);
-    }, 7 * 60 * 1000);
+        }, 8000);
+    }, 4 * 60 * 1000);
+
+    // Every 6 minutes, scroll to top and show forbidden zone highlight
+    setInterval(() => {
+        const forbidden = document.querySelector('.forbidden-zone');
+        if (forbidden) {
+            forbidden.style.animation = 'redPulse 0.5s ease 6';
+            forbidden.style.border = '4px solid #ff0000';
+            forbidden.style.boxShadow = '0 0 40px rgba(255,0,0,0.5)';
+            forbidden.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+                forbidden.style.animation = '';
+                forbidden.style.border = '';
+                forbidden.style.boxShadow = '';
+            }, 5000);
+        }
+    }, 6 * 60 * 1000);
 }
+
+// ============================================================
+// CONFESSION SYSTEM — periodic check-ins
+// ============================================================
+function startConfessionSystem() {
+    // First confession after 2 hours
+    setTimeout(() => {
+        showConfession();
+        // Then every 3 hours
+        setInterval(showConfession, 3 * 60 * 60 * 1000);
+    }, 2 * 60 * 60 * 1000);
+}
+
+// ============================================================
+// NUCLEAR MODE — random full-screen takeovers
+// ============================================================
+function startNuclearMode() {
+    const nuclearMessages = [
+        { emoji: "☢️", title: "בדיקה פתאומית!!!", message: "מה אכלת בשעה האחרונה?! אם התשובה כוללת מתוק, חטיף, או שאריות ילדים — אתה יודע מה לעשות! תשתה מים, תאכל ירק, ותתקדם!", nuclear: true },
+        { emoji: "🚨", title: "אלארם בריאות!!!", message: "בדוק את עצמך: 1) שתית מספיק מים? 2) אכלת ירקות? 3) יש לך פירות ליד? 4) אין חטיפים בהישג יד? אם משהו לא מסומן — תקן עכשיו!", nuclear: true },
+        { emoji: "💣", title: "הפצצה מתקתקת!!!", message: "כל דקה שעוברת בלי שתייה ואכילה נכונה — הגוף שלך משלם. אל תחכה! קום עכשיו! מים! ירקות! תנועה! יאללה!", nuclear: true },
+        { emoji: "🫵", title: "אני מדבר אליך!!!", message: "כן, אליך! אל תתעלם! אל תגלול! תסתכל על ההודעה הזאת! שתית מים? אכלת פרי? לא נגעת בשטויות? תענה לעצמך בכנות!", nuclear: true },
+        { emoji: "⏰", title: "הזמן אוזל!!!", message: "כל יום שעובר בלי שינוי — זה יום שלא חוזר. בגיל 40 אין לך מותרות! הגוף לא סולח! תתחיל עכשיו או תשלם אחר כך ביוקר!", nuclear: true },
+    ];
+
+    // Random nuclear popup every 8 minutes
+    setInterval(() => {
+        const msg = nuclearMessages[Math.floor(Math.random() * nuclearMessages.length)];
+        showMotivation(msg);
+    }, 8 * 60 * 1000);
+
+    // Full screen takeover every 20 minutes
+    setInterval(() => {
+        const msgs = [
+            { emoji: "🚨", title: "בדיקה!!!!", message: "עצור הכל! תנשום! תשתה מים! תבדוק: אכלת ירקות? שתית מספיק? לא נגעת בשטויות? אם כן — אלוף! אם לא — עכשיו הזמן לתקן!" },
+            { emoji: "🔥", title: "אל תוותר!!!!", message: "אתה כבר עשית את זה פעם! זוכר? ההרגשה? הבגדים? הגאווה? תרגיש את זה שוב! הכל תלוי רק בך! כל ארוחה היא בחירה!" },
+            { emoji: "💪", title: "מי הבוס?! אתה!", message: "אתה מחליט מה נכנס לגוף שלך! לא החטיף! לא העמיתים! לא הילדים! אתה! תחליט נכון! תבחר בריאות!" },
+        ];
+        const msg = msgs[Math.floor(Math.random() * msgs.length)];
+        const takeover = document.getElementById('fullscreenTakeover');
+        document.getElementById('takeoverEmoji').textContent = msg.emoji;
+        document.getElementById('takeoverTitle').textContent = msg.title;
+        document.getElementById('takeoverMessage').textContent = msg.message;
+        takeover.classList.add('active');
+        playAlertSound('nuclear');
+
+        let countdown = 10;
+        const btn = document.getElementById('takeoverDismiss');
+        btn.disabled = true;
+        btn.style.opacity = '0.3';
+        const interval = setInterval(() => {
+            countdown--;
+            btn.textContent = `תקרא! (${countdown})`;
+            if (countdown <= 0) {
+                clearInterval(interval);
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.textContent = '💪 הבנתי! ממשיך!';
+            }
+        }, 1000);
+    }, 20 * 60 * 1000);
+}
+
+// ============================================================
+// SCROLLING TICKER — update with dynamic content
+// ============================================================
+function updateTicker() {
+    setInterval(() => {
+        const msgs = motivationalMessages.filter(m => m.aggressive);
+        const selected = [];
+        for (let i = 0; i < 10; i++) {
+            const m = msgs[Math.floor(Math.random() * msgs.length)];
+            selected.push(`${m.emoji} ${m.title}`);
+        }
+        document.getElementById('tickerContent').textContent = selected.join(' 🔴 ');
+    }, 60 * 1000); // Update every minute
+}
+
+// ============================================================
+// TAB TITLE NAGGING — nags you even on other tabs!
+// ============================================================
+const originalTitle = document.title;
+let titleFlashing = true;
+const tabMessages = [
+    '🚨 שתית מים?!',
+    '💧 קום תשתה!',
+    '🥗 אכלת ירקות?',
+    '🚫 אל תאכל חטיף!',
+    '💪 אתה חזק!',
+    '👖 תחשוב על הג\'ינס!',
+    '⚠️ סוכר = רעל!',
+    '🔥 יום נקי!',
+    '👶 לא שאריות ילדים!',
+    '🤬 שים את החטיף!',
+    '🫖 תכין תה!',
+    '📏 המכנסיים ממתינים!',
+    '💀 כל ממתק = רעל!',
+    '🏖️ הקיץ בא!',
+];
+
+setInterval(() => {
+    if (document.hidden) {
+        // Flash between messages when tab is not active
+        const msg = tabMessages[Math.floor(Math.random() * tabMessages.length)];
+        document.title = document.title === msg ? '❗❗❗ חזור לדשבורד! ❗❗❗' : msg;
+    } else {
+        document.title = originalTitle;
+    }
+}, 2000);
+
+// ============================================================
+// VISIBILITY CHANGE — popup when returning to tab
+// ============================================================
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        // User came back to tab — surprise them!
+        setTimeout(() => {
+            const aggressive = motivationalMessages.filter(m => m.aggressive);
+            const msg = aggressive[Math.floor(Math.random() * aggressive.length)];
+            showMotivation(msg);
+        }, 500);
+    }
+});
+
+// ============================================================
+// PAGE LOAD AGGRESSIVE GREETING
+// ============================================================
+window.addEventListener('load', () => {
+    // Immediate aggressive check based on time of day
+    const hour = new Date().getHours();
+    let greeting;
+
+    if (hour < 7) {
+        greeting = { emoji: "🌙", title: "מוקדם! מצוין!", message: "התעוררת מוקדם? מעולה! תתחיל עם כוס מים גדולה ותכנן את האוכל הבריא ליום. אין תירוצים!!", aggressive: true };
+    } else if (hour < 10) {
+        greeting = { emoji: "🌅", title: "בוקר טוב אלוף!", message: "יום חדש! מים ראשונים? ארוחת בוקר בריאה? הכנת אוכל לעבודה? אם לא — עכשיו! יאללה!", aggressive: true };
+    } else if (hour < 14) {
+        greeting = { emoji: "☀️", title: "איך הולך היום?!", message: "כמה כוסות מים שתית? אכלת ירקות? לא נגעת בחטיפים? תבדוק את עצמך! עכשיו!", aggressive: true };
+    } else if (hour < 18) {
+        greeting = { emoji: "⚠️", title: "אחר צהריים = סכנה!", message: "זה הזמן הכי מסוכן! רעב מזויף! חטיפים בהישג יד! תשתה מים! תאכל ירקות! אל תיכנע!", aggressive: true, nuclear: true };
+    } else {
+        greeting = { emoji: "🌙", title: "ערב טוב!", message: "מה המצב? ארוחת ערב קלה! סלט + חלבון! לא שאריות ילדים! אחרי 8 — מטבח סגור! עדכן דשבורד!", aggressive: true };
+    }
+
+    setTimeout(() => showMotivation(greeting), 2000);
+});
 
 init();
 </script>

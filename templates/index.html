@@ -248,6 +248,42 @@
     .gen-table tr.gen-pct-row td { font-size: 0.72rem; color: #6b7280; }
     #generic-empty { text-align: center; padding: 40px; color: #94a3b8; font-size: 0.9rem; }
 
+    /* ── Sheet description / notes section ──────────────── */
+    .sheet-description {
+      margin-top: 16px;
+      padding: 16px 20px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      direction: rtl;
+    }
+    .sheet-description-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin-bottom: 10px;
+    }
+    .sheet-description ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: heb-counter;
+    }
+    .sheet-description li {
+      font-size: 0.74rem;
+      color: #374151;
+      line-height: 1.7;
+      padding: 4px 0;
+      padding-right: 24px;
+      position: relative;
+    }
+    .sheet-description li .note-letter {
+      position: absolute;
+      right: 0;
+      font-weight: 700;
+      color: #1e3a8a;
+    }
+
     /* ── Analyst rank cell backgrounds ──────────────────── */
     .rank-bg-green  { background: #dcfce7 !important; }
     .rank-bg-blue   { background: #eff6ff !important; }
@@ -796,7 +832,36 @@
     });
 
     html += '</tbody></table>';
+
+    // ── Sheet-specific description notes ──────────────────
+    const descNotes = getSheetDescription(data.sheet);
+    if (descNotes) {
+      html += '<div class="sheet-description">';
+      html += '<div class="sheet-description-title">ביאורים</div>';
+      html += '<ol>';
+      descNotes.forEach(note => {
+        html += `<li><span class="note-letter">${note.letter}.</span>${note.text}</li>`;
+      });
+      html += '</ol></div>';
+    }
+
     container.innerHTML = html;
+  }
+
+  /* ── Sheet descriptions ──────────────────────────────── */
+  function getSheetDescription(sheetName) {
+    const descriptions = {
+      'ביאור 5': [
+        { letter: 'א', text: 'בכל מקרה שהעברות מהתקציב הבלתי רגיל (כולל מקרנות) לתקציב הרגיל — סכומים אלו הם סכומים פנימיים בין-תקציביים ואינם משפיעים על סיכומי התקבולים והתשלומים בתקציב הרגיל. מדובר בהעברות פנים-תקציביות בלבד.' },
+        { letter: 'ב', text: 'כספי הקרנות מופקדים בפיקדון בנקאי ומניבים הכנסות מהשקעות (ריבית). הכנסות אלו אינן נכללות בתקבולים של התקציב הרגיל, אלא מצטרפות ליתרת הקרנות.' },
+        { letter: 'ג', text: 'כאשר יתרת קרן כלשהי היא שלילית (הרשות חייבת כספים לקרן), הסכום מוצג בסוגריים.' },
+        { letter: 'ד', text: 'בשנה שבה לרשות המקומית ביצוע גרעוני בתקציב הרגיל, ההעברות מהקרנות לכיסוי הגרעון כלולות בסיכומי הביצוע.' },
+        { letter: 'ה', text: 'הקרנות המסומנות ב-(****) הן קרנות שהשימוש בהן או העברתן מחייבים אישור שר הפנים, בהתאם לתקנות ולחוקים הרלוונטיים.' },
+        { letter: 'ו', text: 'הכנסות הקרנות/תקציב הפיתוח הבלתי רגיל מוצגות לפי סכומים בפועל ולא על פי אומדנים.' },
+        { letter: 'ז', text: 'כאשר מדובר בנתונים של שנה קודמת, חלוקת הקרנות לפי סוגים מבוצעת בהתאם לפירוט הקיים בדוח אותה שנה. במקרים מסוימים הפירוט כולל אומדנים סבירים. סה"כ תנועת הקרנות ומרכיביה העיקריים מתבססים על הדוח הכספי של אותה שנה.' },
+      ],
+    };
+    return descriptions[sheetName] || null;
   }
 
   // ── Form2 formatting ──────────────────────────────────

@@ -336,20 +336,46 @@
       border-radius: 10px;
       padding: 14px 16px;
       text-align: center;
+      position: relative;
     }
     .info-card-label {
       font-size: 0.68rem;
       font-weight: 700;
       color: #64748b;
       margin-bottom: 6px;
-      text-transform: uppercase;
       letter-spacing: 0.04em;
     }
     .info-card-value {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 800;
       color: #0e7490;
     }
+    .info-card-meta {
+      font-size: 0.55rem;
+      color: #a3b1c6;
+      margin-top: 5px;
+      line-height: 1.4;
+    }
+    .muni-info-section-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #334155;
+      margin: 20px 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .muni-info-section-title .section-badge {
+      font-size: 0.6rem;
+      background: #e0e7ff;
+      color: #3730a3;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .fin-card .info-card-value { color: #0f766e; }
     .muni-info-empty {
       text-align: center; padding: 40px; color: #94a3b8; font-size: 0.9rem;
     }
@@ -800,50 +826,66 @@
     document.getElementById('info-panel-header').textContent =
       `מידע כללי — ${data.municipality}`;
 
-    if (!data.found) {
+    if (!data.found && (!data.financial || !data.financial.length)) {
       container.innerHTML = '<div class="muni-info-empty">לא נמצא מידע עבור רשות זו</div>';
       return;
     }
 
-    // Preferred display order for info cards
-    const cardOrder = [
-      'סוג רשות', 'מחוז', 'אוכלוסייה', 'שנת נתוני אוכלוסייה',
-      'שטח (קמ"ר)', 'צפיפות (נפשות/קמ"ר)', 'ראש הרשות',
-      'אשכול חברתי-כלכלי', 'שנת הקמה', 'סמל רשות'
-    ];
-
     let html = '<div class="muni-info-wrap">';
 
     // Top section: thumbnail + extract
-    html += '<div class="muni-info-top">';
-    if (data.thumbnail) {
-      html += `<img class="muni-info-thumb" src="${data.thumbnail}" alt="${data.municipality}">`;
+    if (data.found) {
+      html += '<div class="muni-info-top">';
+      if (data.thumbnail) {
+        html += `<img class="muni-info-thumb" src="${data.thumbnail}" alt="${data.municipality}">`;
+      }
+      if (data.extract) {
+        html += `<div class="muni-info-extract">${data.extract}</div>`;
+      }
+      html += '</div>';
     }
-    if (data.extract) {
-      html += `<div class="muni-info-extract">${data.extract}</div>`;
-    }
-    html += '</div>';
 
-    // Info cards
-    const info = data.info || {};
-    const keys = cardOrder.filter(k => info[k]);
-    // Add any remaining keys not in the preferred order
-    Object.keys(info).forEach(k => { if (!keys.includes(k)) keys.push(k); });
-
-    if (keys.length) {
+    // ── Wikipedia info cards ──────────────────────
+    const wikiItems = data.wiki_info || [];
+    if (wikiItems.length) {
+      const wikiDate = data.wiki_updated ? ` | עודכן: ${data.wiki_updated}` : '';
+      html += `<div class="muni-info-section-title">נתונים דמוגרפיים וגיאוגרפיים <span class="section-badge">ויקיפדיה${wikiDate}</span></div>`;
       html += '<div class="muni-info-cards">';
-      keys.forEach(k => {
-        html += `<div class="info-card">`;
-        html += `<div class="info-card-label">${k}</div>`;
-        html += `<div class="info-card-value">${info[k]}</div>`;
+      wikiItems.forEach(item => {
+        html += '<div class="info-card">';
+        html += `<div class="info-card-label">${item.label}</div>`;
+        html += `<div class="info-card-value">${item.value}</div>`;
+        html += `<div class="info-card-meta">${item.source}${item.updated ? ' | ' + item.updated : ''}</div>`;
         html += '</div>';
       });
       html += '</div>';
     }
 
-    // Source link
-    const wikiTitle = data.wiki_title || data.municipality;
-    html += `<div class="muni-info-source">מקור: <a href="https://he.wikipedia.org/wiki/${encodeURIComponent(wikiTitle)}" target="_blank">ויקיפדיה העברית</a></div>`;
+    // ── Financial data cards ─────────────────────
+    const finItems = data.financial || [];
+    if (finItems.length) {
+      const dataYear = data.data_year || '';
+      html += `<div class="muni-info-section-title">נתונים כספיים ותפעוליים <span class="section-badge">משרד הפנים ${dataYear}</span></div>`;
+      html += '<div class="muni-info-cards">';
+      finItems.forEach(item => {
+        html += '<div class="info-card fin-card">';
+        html += `<div class="info-card-label">${item.label}</div>`;
+        html += `<div class="info-card-value">${item.value}</div>`;
+        html += `<div class="info-card-meta">${item.source} | ${item.year}</div>`;
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    // Source links
+    html += '<div class="muni-info-source">';
+    if (data.found) {
+      const wikiTitle = data.wiki_title || data.municipality;
+      html += `מקורות: <a href="https://he.wikipedia.org/wiki/${encodeURIComponent(wikiTitle)}" target="_blank">ויקיפדיה העברית</a>`;
+      html += ' | ';
+    }
+    html += `<a href="https://www.gov.il/he/departments/ministry_of_interior" target="_blank">משרד הפנים — דוחות כספיים ${data.data_year || ''}</a>`;
+    html += '</div>';
 
     html += '</div>';
     container.innerHTML = html;

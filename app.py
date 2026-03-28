@@ -927,6 +927,7 @@ WIKI_INFOBOX_FIELDS = {
     'סוג':          'סוג רשות',
     'סוג_רשות':     'סוג רשות',
     'מחוז':         'מחוז',
+    'נפה':          'נפה',
     'אוכלוסייה':    'אוכלוסייה',
     'אוכלוסיה':     'אוכלוסייה',
     'שנת_אוכלוסייה':'שנת נתוני אוכלוסייה',
@@ -940,6 +941,9 @@ WIKI_INFOBOX_FIELDS = {
     'סמל':          'סמל רשות',
     'שנת_הקמה':     'שנת הקמה',
     'שנת_ייסוד':    'שנת הקמה',
+    'אתר':          'אתר אינטרנט',
+    'גובה':         'גובה (מטר)',
+    'מיקוד':        'מיקוד',
 }
 
 
@@ -1012,12 +1016,125 @@ def _fetch_wikipedia(municipality):
     except (ValueError, ZeroDivisionError):
         pass
 
+    # Get last-modified timestamp of the wiki page
+    revisions_resp = http_requests.get(base, params={
+        'action': 'query', 'titles': title,
+        'prop': 'revisions', 'rvprop': 'timestamp', 'rvlimit': 1,
+        'format': 'json',
+    }, timeout=8)
+    rev_pages = revisions_resp.json().get('query', {}).get('pages', {})
+    rev_page = next(iter(rev_pages.values()), {})
+    revisions = rev_page.get('revisions', [])
+    wiki_updated = revisions[0]['timestamp'][:10] if revisions else None
+
     return {
         'title': title,
         'extract': short_extract,
         'thumbnail': thumbnail,
         'info': info,
+        'wiki_updated': wiki_updated,
     }
+
+
+def _get_financial_summary(municipality):
+    """Extract key financial stats from existing datasets."""
+    financial = []
+    year = YEAR_CUR
+
+    # From דוח לתושב
+    if extra_sheets_data is not None:
+        dt = extra_sheets_data[
+            (extra_sheets_data['גליון'] == 'דוח לתושב') &
+            (extra_sheets_data['שם_רשות'] == municipality)
+        ]
+        cur = dt[dt['עמודה'] == 'שנה נוכחית']
+        lookup = {str(r['שורה']).strip(): float(r['ערך'])
+                  for _, r in cur.iterrows() if pd.notna(r['ערך'])}
+
+        fields = [
+            ('סה"כ הכנסות',               'סהכ הכנסות',               'thousands', 'אלפי ש"ח'),
+            ('סה"כ הוצאות',               'סהכ הוצאות',               'thousands', 'אלפי ש"ח'),
+            ('הוצאה ממוצעת לנפש',         'הוצאה ממוצעת לנפש בשח',   'number',    'ש"ח'),
+            ('מספר משרות',                'מספר משרות ממוצע',          'integer',   ''),
+            ('אחוז גבייה מהשוטף',         'אחוז גביה מהשוטף',        'percent',   ''),
+            ('ממוצע ארנונה למ"ר מגורים',   'ממוצע ארנונה למגורים למר', 'number',    'ש"ח'),
+            ('אחוז גירעון שוטף מהכנסה',   'אחוז הגרעון השוטף מן ההכנסה', 'percent', ''),
+            ('אחוז גירעון נצבר מהכנסה',   'אחוז הגרעון הנצבר מן ההכנסה', 'percent', ''),
+            ('אחוז עומס מלוות מהכנסה',    'אחוז עומס המלוות מן ההכנסה',  'percent', ''),
+            ('אחוז התחייבויות מהכנסה',    'אחוז סך ההתחיבויות מההכנסה',  'percent', ''),
+            ('עומס מלוות מבנקים',          'עומס מלוות מבנקים וממוסדות כספיים לסוף שנה', 'thousands', 'אלפי ש"ח'),
+        ]
+
+        for label, key, fmt, unit in fields:
+            val = lookup.get(key)
+            if val is not None:
+                if fmt == 'thousands':
+                    display = f'{val:,.0f}'
+                elif fmt == 'percent':
+                    display = f'{val * 100:.1f}%' if abs(val) < 1 else f'{val:.1f}%'
+                elif fmt == 'integer':
+                    display = f'{val:,.0f}'
+                else:
+                    display = f'{val:,.1f}'
+                if unit and fmt != 'percent':
+                    display += f' {unit}'
+                financial.append({
+                    'label': label,
+                    'value': display,
+                    'source': 'דוח לתושב — משרד הפנים',
+                    'year': year,
+                })
+
+        # Income breakdown percentages
+        prev = dt[dt['עמודה'] == 'אחוז ביצוע מסהכ שנה נוכחית']
+        pct_lookup = {str(r['שורה']).strip(): float(r['ערך'])
+                      for _, r in prev.iterrows() if pd.notna(r['ערך'])}
+        for label, key in [
+            ('חלק הכנסות עצמיות', 'הכנסות עצמיות'),
+            ('חלק מענקים', 'מענקים'),
+            ('חלק חינוך (הוצאות)', 'שכר חינוך'),
+        ]:
+            val = pct_lookup.get(key)
+            if val is not None:
+                financial.append({
+                    'label': label,
+                    'value': f'{val * 100:.1f}%' if abs(val) < 1 else f'{val:.1f}%',
+                    'source': 'דוח לתושב — משרד הפנים',
+                    'year': year,
+                })
+
+        # Balance from form2
+        if analyst_kpis is not None and municipality in analyst_kpis.index:
+            kpi = analyst_kpis.loc[municipality]
+            surplus = kpi.get('surplus', 0)
+            surplus_pct = kpi.get('surplus_pct', 0)
+            if pd.notna(surplus):
+                sign = 'עודף' if surplus >= 0 else 'גרעון'
+                financial.append({
+                    'label': f'{sign} תפעולי',
+                    'value': f'{abs(surplus):,.0f} אלפי ש"ח ({abs(surplus_pct):.1f}%)',
+                    'source': 'טופס 2 — משרד הפנים',
+                    'year': year,
+                })
+
+        # Households from נתונים כלליים
+        nk = extra_sheets_data[
+            (extra_sheets_data['גליון'] == 'נתונים כלליים') &
+            (extra_sheets_data['שם_רשות'] == municipality) &
+            (extra_sheets_data['עמודה'] == 'שנה נוכחית')
+        ]
+        for _, r in nk.iterrows():
+            label = str(r['שורה']).strip()
+            val = r['ערך']
+            if pd.notna(val) and val > 0:
+                financial.append({
+                    'label': label,
+                    'value': f'{int(val):,}',
+                    'source': 'נתונים כלליים — משרד הפנים',
+                    'year': year,
+                })
+
+    return financial
 
 
 @app.route('/api/municipality_info/<path:municipality>')
@@ -1026,27 +1143,58 @@ def get_municipality_info(municipality):
         return jsonify(_muni_info_cache[municipality])
 
     try:
-        data = _fetch_wikipedia(municipality)
+        wiki_data = _fetch_wikipedia(municipality)
     except Exception as e:
         print(f"Wikipedia fetch error for {municipality}: {e}")
-        data = None
+        wiki_data = None
 
-    if data is None:
+    try:
+        financial = _get_financial_summary(municipality)
+    except Exception as e:
+        print(f"Financial data error for {municipality}: {e}")
+        financial = []
+
+    if wiki_data is None:
         result = {
             'municipality': municipality,
             'found': False,
             'extract': '',
-            'info': {},
+            'wiki_info': [],
+            'financial': financial,
             'thumbnail': None,
+            'data_year': YEAR_CUR,
         }
     else:
+        # Build wiki info items with source metadata
+        wiki_items = []
+        card_order = [
+            'סוג רשות', 'מחוז', 'נפה', 'אוכלוסייה', 'שנת נתוני אוכלוסייה',
+            'שטח (קמ"ר)', 'צפיפות (נפשות/קמ"ר)', 'גובה (מטר)',
+            'ראש הרשות', 'אשכול חברתי-כלכלי',
+            'שנת הקמה', 'מיקוד', 'סמל רשות', 'אתר אינטרנט',
+        ]
+        info = wiki_data['info']
+        ordered_keys = [k for k in card_order if k in info]
+        ordered_keys += [k for k in info if k not in ordered_keys]
+
+        for key in ordered_keys:
+            wiki_items.append({
+                'label': key,
+                'value': info[key],
+                'source': 'ויקיפדיה העברית',
+                'updated': wiki_data.get('wiki_updated', ''),
+            })
+
         result = {
             'municipality': municipality,
             'found': True,
-            'wiki_title': data['title'],
-            'extract': data['extract'],
-            'info': data['info'],
-            'thumbnail': data['thumbnail'],
+            'wiki_title': wiki_data['title'],
+            'extract': wiki_data['extract'],
+            'wiki_info': wiki_items,
+            'financial': financial,
+            'thumbnail': wiki_data['thumbnail'],
+            'wiki_updated': wiki_data.get('wiki_updated', ''),
+            'data_year': YEAR_CUR,
         }
 
     _muni_info_cache[municipality] = result

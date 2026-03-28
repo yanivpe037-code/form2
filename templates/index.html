@@ -284,6 +284,33 @@
       color: #1e3a8a;
     }
 
+    /* ── Sub-tables (הרכב boxes) ────────────────────────── */
+    .sub-tables-wrap {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+      direction: rtl;
+    }
+    .sub-table-box {
+      flex: 1;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .sub-table-box .sub-table-title {
+      background: #eef2ff;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #3730a3;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .sub-table-box .gen-table { margin: 0; }
+    .sub-table-box .gen-table thead th { font-size: 0.68rem; }
+    .sub-table-box .gen-table tbody td { font-size: 0.76rem; }
+    @media (max-width: 700px) { .sub-tables-wrap { flex-direction: column; } }
+
     /* ── Analyst rank cell backgrounds ──────────────────── */
     .rank-bg-green  { background: #dcfce7 !important; }
     .rank-bg-blue   { background: #eff6ff !important; }
@@ -798,20 +825,33 @@
     const yc   = data.year_cur, yp = data.year_prev;
     const hasRanks = data.analyst_mode && data.rows.some(r => r._ranks);
 
+    // ── ביאור 5: separate הרכב sub-tables ──────────────────
+    const subTableDefs = (data.sheet === 'ביאור 5') ? [
+      { col: 'הרכב התקבולים בקרן היטל השבחה', title: 'הרכב התקבולים בקרן היטל השבחה (1)',
+        rows: ['היטל השבחה', 'היטל חלף השבחה', 'סך הכל הרכב התקבולים בקרן היטל השבחה'] },
+      { col: 'הרכב העברה לתברים', title: 'הרכב העברה לתברים (2)',
+        rows: ['העברה שוטפת', 'מלוות לאיזון התקציב הרגיל', 'סך הכל הרכב העברה לתברים'] },
+    ] : [];
+    const subColNames = subTableDefs.map(d => d.col);
+    const subRowNames = subTableDefs.flatMap(d => d.rows);
+    const mainCols = subTableDefs.length ? cols.filter(c => !subColNames.includes(c)) : cols;
+    const mainRows = subTableDefs.length ? data.rows.filter(r => !subRowNames.includes(r.label)) : data.rows;
+
+    // ── Main table ──────────────────────────────────────────
     let html = '<table class="gen-table"><thead><tr>';
     html += '<th class="gen-th-label">שורה</th>';
-    cols.forEach(c => {
+    mainCols.forEach(c => {
       html += `<th class="gen-th-num">${abbrevCol(c, yc, yp)}</th>`;
     });
     html += '</tr></thead><tbody>';
 
-    data.rows.forEach(row => {
-      const cls    = getGenericRowClass(row.label, row, cols);
+    mainRows.forEach(row => {
+      const cls    = getGenericRowClass(row.label, row, mainCols);
       const ranks  = row._ranks || {};
       html += `<tr${cls ? ` class="${cls}"` : ''}>`;
       html += `<td class="gen-td-label">${row.label}</td>`;
 
-      cols.forEach(c => {
+      mainCols.forEach(c => {
         const formatted = fmtGenericVal(row[c], c);
         const rdata     = hasRanks ? ranks[c] : null;
 
@@ -832,6 +872,33 @@
     });
 
     html += '</tbody></table>';
+
+    // ── Sub-tables (הרכב boxes) ─────────────────────────────
+    if (subTableDefs.length) {
+      html += '<div class="sub-tables-wrap">';
+      subTableDefs.forEach(def => {
+        const subRows = data.rows.filter(r => def.rows.includes(r.label));
+        html += `<div class="sub-table-box">`;
+        html += `<div class="sub-table-title">${def.title}</div>`;
+        html += '<table class="gen-table"><thead><tr>';
+        html += '<th class="gen-th-label">שורה</th>';
+        html += `<th class="gen-th-num">סכום</th>`;
+        html += '</tr></thead><tbody>';
+        subRows.forEach(row => {
+          const val = row[def.col];
+          const formatted = fmtGenericVal(val, def.col);
+          const cls = getGenericRowClass(row.label, row, [def.col]);
+          html += `<tr${cls ? ` class="${cls}"` : ''}>`;
+          html += `<td class="gen-td-label">${row.label}</td>`;
+          html += formatted === null
+            ? '<td class="gen-td-null gen-td-num">—</td>'
+            : `<td class="gen-td-num">${formatted}</td>`;
+          html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+      });
+      html += '</div>';
+    }
 
     // ── Sheet-specific description notes ──────────────────
     const descNotes = getSheetDescription(data.sheet);

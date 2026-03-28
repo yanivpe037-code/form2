@@ -383,6 +383,22 @@
       margin-top: 16px; font-size: 0.65rem; color: #94a3b8; text-align: center;
     }
     .muni-info-source a { color: #64748b; text-decoration: underline; }
+    /* officials & corporations tables */
+    .muni-info-tables { display: flex; gap: 16px; margin-top: 4px; }
+    .muni-info-tbl-wrap { flex: 1; min-width: 0; }
+    .muni-info-tbl {
+      width: 100%; border-collapse: collapse; font-size: 0.78rem; direction: rtl;
+    }
+    .muni-info-tbl thead th {
+      background: #f1f5f9; padding: 7px 10px; text-align: right;
+      font-weight: 700; color: #374151; border-bottom: 2px solid #e2e8f0;
+      font-size: 0.7rem;
+    }
+    .muni-info-tbl tbody td {
+      padding: 6px 10px; border-bottom: 1px solid #f1f5f9;
+    }
+    .muni-info-tbl tbody tr:hover { background: #f0f9ff; }
+    @media (max-width: 700px) { .muni-info-tables { flex-direction: column; } }
     @media (max-width: 700px) {
       .muni-info-top { flex-direction: column; align-items: center; }
       .muni-info-thumb { width: 100%; min-width: 0; height: auto; max-height: 200px; }
@@ -861,6 +877,55 @@
       html += '</div>';
     }
 
+    // ── Gov info cards (mabat-pnim / data.gov.il) ──
+    const govItems = data.gov_info || [];
+    if (govItems.length) {
+      html += `<div class="muni-info-section-title">נתוני משרד הפנים <span class="section-badge">מבט פנים / data.gov.il</span></div>`;
+      html += '<div class="muni-info-cards">';
+      govItems.forEach(item => {
+        let val = item.value;
+        if (item.label === 'אתר אינטרנט' && val && !val.startsWith('http')) val = 'https://' + val;
+        if (item.label === 'אתר אינטרנט' && val) {
+          val = `<a href="${val}" target="_blank" style="color:#0e7490;text-decoration:underline;font-size:0.8rem">${item.value}</a>`;
+        }
+        html += '<div class="info-card">';
+        html += `<div class="info-card-label">${item.label}</div>`;
+        html += `<div class="info-card-value" style="font-size:0.9rem">${val}</div>`;
+        html += `<div class="info-card-meta">${item.source}</div>`;
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    // ── Officials & Corporations tables ──────────
+    const officials = data.officials || [];
+    const corps = data.corporations || [];
+    if (officials.length || corps.length) {
+      html += '<div class="muni-info-tables">';
+
+      if (officials.length) {
+        html += '<div class="muni-info-tbl-wrap">';
+        html += `<div class="muni-info-section-title">בעלי תפקידים <span class="section-badge">מבט פנים</span></div>`;
+        html += '<table class="muni-info-tbl"><thead><tr><th>שם</th><th>תפקיד</th></tr></thead><tbody>';
+        officials.forEach(o => {
+          html += `<tr><td>${o.name}</td><td>${o.role}</td></tr>`;
+        });
+        html += '</tbody></table></div>';
+      }
+
+      if (corps.length) {
+        html += '<div class="muni-info-tbl-wrap">';
+        html += `<div class="muni-info-section-title">תאגידים קשורים <span class="section-badge">מבט פנים</span></div>`;
+        html += '<table class="muni-info-tbl"><thead><tr><th>שם</th><th>סוג</th></tr></thead><tbody>';
+        corps.forEach(c => {
+          html += `<tr><td>${c.name}</td><td>${c.type}</td></tr>`;
+        });
+        html += '</tbody></table></div>';
+      }
+
+      html += '</div>';
+    }
+
     // ── Financial data cards ─────────────────────
     const finItems = data.financial || [];
     if (finItems.length) {
@@ -879,12 +944,15 @@
 
     // Source links
     html += '<div class="muni-info-source">';
-    if (data.found) {
-      const wikiTitle = data.wiki_title || data.municipality;
-      html += `מקורות: <a href="https://he.wikipedia.org/wiki/${encodeURIComponent(wikiTitle)}" target="_blank">ויקיפדיה העברית</a>`;
-      html += ' | ';
+    html += 'מקורות: ';
+    if (data.wiki_title) {
+      html += `<a href="https://he.wikipedia.org/wiki/${encodeURIComponent(data.wiki_title)}" target="_blank">ויקיפדיה</a> | `;
     }
-    html += `<a href="https://www.gov.il/he/departments/ministry_of_interior" target="_blank">משרד הפנים — דוחות כספיים ${data.data_year || ''}</a>`;
+    if (data.mabat_url) {
+      html += `<a href="${data.mabat_url}" target="_blank">מבט פנים — משרד הפנים</a> | `;
+    }
+    html += `<a href="https://data.gov.il" target="_blank">data.gov.il</a>`;
+    html += ` | דוחות כספיים ${data.data_year || ''}`;
     html += '</div>';
 
     html += '</div>';

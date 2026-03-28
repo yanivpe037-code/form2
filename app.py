@@ -6,6 +6,7 @@ import pickle
 import requests as http_requests
 import re
 import json
+from urllib.parse import quote
 
 app = Flask(__name__)
 
@@ -1036,6 +1037,202 @@ def _fetch_wikipedia(municipality):
     }
 
 
+# ---------------------------------------------------------------------------
+# Municipality code mapping (built from extra_sheets_data at startup)
+# ---------------------------------------------------------------------------
+_muni_code_map = {}  # name -> code
+
+
+def _build_muni_code_map():
+    global _muni_code_map
+    if extra_sheets_data is not None:
+        codes = extra_sheets_data[['שם_רשות', 'קוד_רשות']].drop_duplicates().dropna()
+        _muni_code_map = {
+            str(r['שם_רשות']).strip(): int(r['קוד_רשות'])
+            for _, r in codes.iterrows()
+        }
+        print(f"Municipality code map: {len(_muni_code_map)} entries.")
+
+
+_build_muni_code_map()
+
+
+# ---------------------------------------------------------------------------
+# Mabat-Pnim (משרד הפנים) data fetcher
+# ---------------------------------------------------------------------------
+_mabat_api_base = None  # discovered at runtime
+_MABAT_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
+    'Referer': 'https://mabat-pnim.moin.gov.il/home',
+    'Origin': 'https://mabat-pnim.moin.gov.il',
+}
+
+# API patterns to try (discovered from Angular SPA patterns)
+_MABAT_PATTERNS = [
+    'https://mabat-pnim.moin.gov.il/api/Municipals/{code}',
+    'https://mabat-pnim.moin.gov.il/api/Municipal/{code}',
+    'https://mabat-pnim.moin.gov.il/api/Authority/{code}',
+    'https://mabat-pnim.moin.gov.il/api/Authorities/{code}',
+    'https://mabat-pnim.moin.gov.il/api/v1/municipals/{code}',
+    'https://mabat-pnim.moin.gov.il/api/municipality/{code}',
+    'https://mabat-pnim.moin.gov.il/api/GetMunicipal/{code}',
+    'https://mabat-pnim.moin.gov.il/api/municipalities/{code}',
+]
+
+
+def _discover_mabat_api():
+    """Try different API patterns to find the working one."""
+    global _mabat_api_base
+    if _mabat_api_base is not None:
+        return _mabat_api_base
+    test_code = 13000  # Jerusalem
+    for pattern in _MABAT_PATTERNS:
+        url = pattern.format(code=test_code)
+        try:
+            resp = http_requests.get(url, headers=_MABAT_HEADERS, timeout=6)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data and isinstance(data, (dict, list)):
+                    _mabat_api_base = pattern
+                    print(f"Mabat-Pnim API discovered: {pattern}")
+                    return pattern
+        except Exception:
+            continue
+    print("Mabat-Pnim API: no working pattern found.")
+    _mabat_api_base = ''  # Mark as tried
+    return ''
+
+
+def _fetch_mabat_pnim(municipality_code):
+    """Fetch municipality data from Mabat-Pnim portal."""
+    pattern = _discover_mabat_api()
+    if not pattern:
+        return None
+    url = pattern.format(code=municipality_code)
+    try:
+        resp = http_requests.get(url, headers=_MABAT_HEADERS, timeout=8)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception as e:
+        print(f"Mabat-Pnim fetch error for {municipality_code}: {e}")
+    return None
+
+
+def _parse_mabat_data(raw):
+    """Extract structured info from mabat-pnim response."""
+    if not raw:
+        return {}
+    result = {'officials': [], 'corporations': [], 'info': {}}
+
+    # Try common field names from Israeli gov APIs
+    field_map = {
+        'שם_רשות': 'שם רשות', 'municipalName': 'שם רשות',
+        'אתר': 'אתר אינטרנט', 'website': 'אתר אינטרנט', 'url': 'אתר אינטרנט',
+        'webSite': 'אתר אינטרנט', 'WebSite': 'אתר אינטרנט',
+        'phone': 'טלפון', 'טלפון': 'טלפון', 'Phone': 'טלפון',
+        'fax': 'פקס', 'פקס': 'פקס', 'Fax': 'פקס',
+        'address': 'כתובת', 'כתובת': 'כתובת', 'Address': 'כתובת',
+        'email': 'דוא"ל', 'Email': 'דוא"ל', 'דואל': 'דוא"ל',
+        'mayorName': 'ראש הרשות', 'MayorName': 'ראש הרשות',
+        'headName': 'ראש הרשות', 'HeadName': 'ראש הרשות',
+        'municipalType': 'סוג רשות', 'MunicipalType': 'סוג רשות',
+        'district': 'מחוז', 'District': 'מחוז',
+        'population': 'אוכלוסייה', 'Population': 'אוכלוסייה',
+        'cluster': 'אשכול חברתי-כלכלי', 'Cluster': 'אשכול חברתי-כלכלי',
+    }
+
+    if isinstance(raw, dict):
+        for key, label in field_map.items():
+            val = raw.get(key)
+            if val and str(val).strip():
+                result['info'][label] = str(val).strip()
+
+        # Look for officials/members list
+        for officials_key in ['officials', 'Officials', 'members', 'Members',
+                              'roleHolders', 'RoleHolders', 'בעלי_תפקידים']:
+            officials = raw.get(officials_key, [])
+            if isinstance(officials, list):
+                for o in officials:
+                    name = o.get('name', o.get('Name', o.get('שם', '')))
+                    role = o.get('role', o.get('Role', o.get('תפקיד', '')))
+                    if name:
+                        result['officials'].append({'name': str(name), 'role': str(role)})
+
+        # Look for corporations
+        for corp_key in ['corporations', 'Corporations', 'companies', 'Companies',
+                         'תאגידים', 'subsidiaries', 'Subsidiaries']:
+            corps = raw.get(corp_key, [])
+            if isinstance(corps, list):
+                for c in corps:
+                    name = c.get('name', c.get('Name', c.get('שם', '')))
+                    ctype = c.get('type', c.get('Type', c.get('סוג', '')))
+                    if name:
+                        result['corporations'].append({'name': str(name), 'type': str(ctype)})
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# data.gov.il (CKAN) fallback
+# ---------------------------------------------------------------------------
+_DATAGOV_CITIES_RESOURCE = 'b7cf8f14-64a2-4b33-8d4b-edb286fdbd37'
+_datagov_cache = {}  # code -> data
+
+
+def _fetch_datagov_city(municipality_code):
+    """Fetch city data from data.gov.il CKAN API."""
+    if municipality_code in _datagov_cache:
+        return _datagov_cache[municipality_code]
+
+    try:
+        url = (f'https://data.gov.il/api/3/action/datastore_search'
+               f'?resource_id={_DATAGOV_CITIES_RESOURCE}'
+               f'&q={municipality_code}&limit=5')
+        resp = http_requests.get(url, timeout=8, headers={
+            'User-Agent': 'Mozilla/5.0',
+        })
+        if resp.status_code == 200:
+            data = resp.json()
+            records = data.get('result', {}).get('records', [])
+            # Find matching record
+            for rec in records:
+                code = rec.get('סמל_ישוב') or rec.get('city_code') or rec.get('code')
+                if str(code) == str(municipality_code):
+                    _datagov_cache[municipality_code] = rec
+                    return rec
+            # If no exact match, return first if available
+            if records:
+                _datagov_cache[municipality_code] = records[0]
+                return records[0]
+    except Exception as e:
+        print(f"data.gov.il fetch error: {e}")
+    return None
+
+
+def _parse_datagov_data(rec):
+    """Extract info from data.gov.il city record."""
+    if not rec:
+        return {}
+    info = {}
+    field_map = {
+        'שם_ישוב': 'שם יישוב (רשמי)',
+        'שם_ישוב_לועזי': 'שם באנגלית',
+        'סמל_נפה': 'סמל נפה',
+        'שם_נפה': 'נפה',
+        'סמל_לשכת_מנא': 'סמל לשכת מנהל',
+        'לשכה': 'לשכה',
+        'סמל_מועצה_איזורית': 'סמל מועצה אזורית',
+        'שם_מועצה': 'מועצה אזורית',
+    }
+    for key, label in field_map.items():
+        val = rec.get(key)
+        if val and str(val).strip() and str(val).strip() != '0':
+            info[label] = str(val).strip()
+    return info
+
+
 def _get_financial_summary(municipality):
     """Extract key financial stats from existing datasets."""
     financial = []
@@ -1142,31 +1339,40 @@ def get_municipality_info(municipality):
     if municipality in _muni_info_cache:
         return jsonify(_muni_info_cache[municipality])
 
+    muni_code = _muni_code_map.get(municipality)
+
+    # ── Fetch all sources in sequence ──
+    wiki_data = None
     try:
         wiki_data = _fetch_wikipedia(municipality)
     except Exception as e:
         print(f"Wikipedia fetch error for {municipality}: {e}")
-        wiki_data = None
 
+    financial = []
     try:
         financial = _get_financial_summary(municipality)
     except Exception as e:
         print(f"Financial data error for {municipality}: {e}")
-        financial = []
 
-    if wiki_data is None:
-        result = {
-            'municipality': municipality,
-            'found': False,
-            'extract': '',
-            'wiki_info': [],
-            'financial': financial,
-            'thumbnail': None,
-            'data_year': YEAR_CUR,
-        }
-    else:
-        # Build wiki info items with source metadata
-        wiki_items = []
+    mabat_data = {}
+    if muni_code:
+        try:
+            raw = _fetch_mabat_pnim(muni_code)
+            mabat_data = _parse_mabat_data(raw)
+        except Exception as e:
+            print(f"Mabat-Pnim error for {municipality} ({muni_code}): {e}")
+
+    datagov_info = {}
+    if muni_code:
+        try:
+            rec = _fetch_datagov_city(muni_code)
+            datagov_info = _parse_datagov_data(rec)
+        except Exception as e:
+            print(f"data.gov.il error for {municipality}: {e}")
+
+    # ── Build wiki info items ──
+    wiki_items = []
+    if wiki_data:
         card_order = [
             'סוג רשות', 'מחוז', 'נפה', 'אוכלוסייה', 'שנת נתוני אוכלוסייה',
             'שטח (קמ"ר)', 'צפיפות (נפשות/קמ"ר)', 'גובה (מטר)',
@@ -1176,7 +1382,6 @@ def get_municipality_info(municipality):
         info = wiki_data['info']
         ordered_keys = [k for k in card_order if k in info]
         ordered_keys += [k for k in info if k not in ordered_keys]
-
         for key in ordered_keys:
             wiki_items.append({
                 'label': key,
@@ -1185,17 +1390,49 @@ def get_municipality_info(municipality):
                 'updated': wiki_data.get('wiki_updated', ''),
             })
 
-        result = {
-            'municipality': municipality,
-            'found': True,
-            'wiki_title': wiki_data['title'],
-            'extract': wiki_data['extract'],
-            'wiki_info': wiki_items,
-            'financial': financial,
-            'thumbnail': wiki_data['thumbnail'],
-            'wiki_updated': wiki_data.get('wiki_updated', ''),
-            'data_year': YEAR_CUR,
-        }
+    # ── Build gov info items (mabat-pnim + data.gov.il) ──
+    gov_items = []
+    gov_info = {}
+    gov_info.update(datagov_info)  # data.gov.il as base
+    if mabat_data.get('info'):
+        gov_info.update(mabat_data['info'])  # mabat overrides
+
+    gov_order = [
+        'אתר אינטרנט', 'טלפון', 'פקס', 'דוא"ל', 'כתובת',
+        'שם יישוב (רשמי)', 'שם באנגלית', 'נפה', 'לשכה', 'מועצה אזורית',
+    ]
+    gov_ordered = [k for k in gov_order if k in gov_info]
+    gov_ordered += [k for k in gov_info if k not in gov_ordered]
+    for key in gov_ordered:
+        # Skip if already in wiki items
+        if any(w['label'] == key for w in wiki_items):
+            continue
+        gov_items.append({
+            'label': key,
+            'value': gov_info[key],
+            'source': 'מבט פנים — משרד הפנים',
+        })
+
+    # ── Officials & Corporations ──
+    officials = mabat_data.get('officials', [])
+    corporations = mabat_data.get('corporations', [])
+
+    result = {
+        'municipality': municipality,
+        'muni_code': muni_code,
+        'found': wiki_data is not None or bool(gov_info),
+        'wiki_title': wiki_data['title'] if wiki_data else None,
+        'extract': wiki_data['extract'] if wiki_data else '',
+        'wiki_info': wiki_items,
+        'gov_info': gov_items,
+        'officials': officials,
+        'corporations': corporations,
+        'financial': financial,
+        'thumbnail': wiki_data['thumbnail'] if wiki_data else None,
+        'wiki_updated': wiki_data.get('wiki_updated', '') if wiki_data else '',
+        'data_year': YEAR_CUR,
+        'mabat_url': f'https://mabat-pnim.moin.gov.il/results/Municipals/{muni_code}' if muni_code else None,
+    }
 
     _muni_info_cache[municipality] = result
     return jsonify(result)

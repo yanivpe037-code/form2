@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 import os
 import pickle
+import requests as http_requests
+import re
+import json
 
 app = Flask(__name__)
 
@@ -205,6 +208,8 @@ EXTRA_SHEETS_CACHE = os.path.join(os.path.dirname(__file__), 'extra_sheets_cache
 extra_sheets_data = None
 
 DISPLAY_SHEETS = [
+    # ── מידע כללי ─────────────────────────────────────────────
+    {'key': 'general_info',             'label': 'מידע כללי על הרשות',              'group': ''},
     # ── טפסים ראשיים ──────────────────────────────────────────
     {'key': 'form2',                    'label': 'טופס 2 – תקבולים ותשלומים',       'group': 'טפסים'},
     {'key': 'דוח לתושב',               'label': 'דוח לתושב',                        'group': 'טפסים'},
@@ -911,6 +916,141 @@ def get_analyst(municipality):
             'surplus': int(row.get('surplus', 0)),
         },
     })
+
+
+# ---------------------------------------------------------------------------
+# Municipality general info (Wikipedia + CBS)
+# ---------------------------------------------------------------------------
+_muni_info_cache = {}
+
+WIKI_INFOBOX_FIELDS = {
+    'סוג':          'סוג רשות',
+    'סוג_רשות':     'סוג רשות',
+    'מחוז':         'מחוז',
+    'אוכלוסייה':    'אוכלוסייה',
+    'אוכלוסיה':     'אוכלוסייה',
+    'שנת_אוכלוסייה':'שנת נתוני אוכלוסייה',
+    'שנת_אוכלוסיה': 'שנת נתוני אוכלוסייה',
+    'שטח':          'שטח (קמ"ר)',
+    'ראש_הרשות':    'ראש הרשות',
+    'ראש_העירייה':  'ראש הרשות',
+    'ראש_המועצה':   'ראש הרשות',
+    'אשכול':        'אשכול חברתי-כלכלי',
+    'אשכול_חברתי_כלכלי': 'אשכול חברתי-כלכלי',
+    'סמל':          'סמל רשות',
+    'שנת_הקמה':     'שנת הקמה',
+    'שנת_ייסוד':    'שנת הקמה',
+}
+
+
+def _fetch_wikipedia(municipality):
+    """Fetch summary + infobox data from Hebrew Wikipedia."""
+    base = 'https://he.wikipedia.org/w/api.php'
+
+    # Step 1: search for page
+    search_resp = http_requests.get(base, params={
+        'action': 'query', 'list': 'search',
+        'srsearch': municipality, 'srlimit': 3, 'format': 'json',
+    }, timeout=8)
+    search_data = search_resp.json()
+    results = search_data.get('query', {}).get('search', [])
+    if not results:
+        return None
+
+    # Pick the best match
+    title = results[0]['title']
+    for r in results:
+        if r['title'] == municipality:
+            title = r['title']
+            break
+
+    # Step 2: get page extract (intro text)
+    extract_resp = http_requests.get(base, params={
+        'action': 'query', 'titles': title,
+        'prop': 'extracts|pageimages', 'exintro': '1', 'explaintext': '1',
+        'piprop': 'thumbnail', 'pithumbsize': 300,
+        'format': 'json',
+    }, timeout=8)
+    pages = extract_resp.json().get('query', {}).get('pages', {})
+    page = next(iter(pages.values()), {})
+    extract = page.get('extract', '')
+    thumbnail = page.get('thumbnail', {}).get('source')
+
+    # Trim extract to first 3 sentences
+    sentences = re.split(r'(?<=[.!?])\s+', extract)
+    short_extract = ' '.join(sentences[:4]).strip()
+
+    # Step 3: get wikitext for infobox parsing
+    parse_resp = http_requests.get(base, params={
+        'action': 'parse', 'page': title,
+        'prop': 'wikitext', 'section': 0, 'format': 'json',
+    }, timeout=8)
+    wikitext = parse_resp.json().get('parse', {}).get('wikitext', {}).get('*', '')
+
+    # Parse infobox fields
+    info = {}
+    for match in re.finditer(r'\|\s*([^\s=|]+)\s*=\s*([^|\n}{]+)', wikitext):
+        key = match.group(1).strip()
+        val = match.group(2).strip()
+        # Clean wiki markup
+        val = re.sub(r'\[\[([^|\]]*\|)?([^\]]*)\]\]', r'\2', val)
+        val = re.sub(r"'{2,}", '', val)
+        val = re.sub(r'<[^>]+>', '', val)
+        val = re.sub(r'\{\{[^}]*\}\}', '', val)
+        val = val.strip()
+        if key in WIKI_INFOBOX_FIELDS and val:
+            info[WIKI_INFOBOX_FIELDS[key]] = val
+
+    # Calculate population density if we have both pop and area
+    pop_str = info.get('אוכלוסייה', '')
+    area_str = info.get('שטח (קמ"ר)', '')
+    try:
+        pop = int(re.sub(r'[^\d]', '', pop_str))
+        area = float(re.sub(r'[^\d.]', '', area_str))
+        if area > 0:
+            info['צפיפות (נפשות/קמ"ר)'] = f'{pop / area:,.0f}'
+    except (ValueError, ZeroDivisionError):
+        pass
+
+    return {
+        'title': title,
+        'extract': short_extract,
+        'thumbnail': thumbnail,
+        'info': info,
+    }
+
+
+@app.route('/api/municipality_info/<path:municipality>')
+def get_municipality_info(municipality):
+    if municipality in _muni_info_cache:
+        return jsonify(_muni_info_cache[municipality])
+
+    try:
+        data = _fetch_wikipedia(municipality)
+    except Exception as e:
+        print(f"Wikipedia fetch error for {municipality}: {e}")
+        data = None
+
+    if data is None:
+        result = {
+            'municipality': municipality,
+            'found': False,
+            'extract': '',
+            'info': {},
+            'thumbnail': None,
+        }
+    else:
+        result = {
+            'municipality': municipality,
+            'found': True,
+            'wiki_title': data['title'],
+            'extract': data['extract'],
+            'info': data['info'],
+            'thumbnail': data['thumbnail'],
+        }
+
+    _muni_info_cache[municipality] = result
+    return jsonify(result)
 
 
 if __name__ == '__main__':

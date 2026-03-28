@@ -311,6 +311,57 @@
     .sub-table-box .gen-table tbody td { font-size: 0.76rem; }
     @media (max-width: 700px) { .sub-tables-wrap { flex-direction: column; } }
 
+    /* ── Municipality general info ──────────────────────── */
+    #info-view { display: none; }
+    #info-view .panel-header { background: #0e7490; }
+    .muni-info-wrap { padding: 20px; direction: rtl; }
+    .muni-info-top { display: flex; gap: 20px; margin-bottom: 20px; }
+    .muni-info-thumb {
+      width: 220px; min-width: 220px; height: 160px;
+      border-radius: 10px; object-fit: cover;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    }
+    .muni-info-extract {
+      font-size: 0.82rem; line-height: 1.8; color: #334155;
+      flex: 1;
+    }
+    .muni-info-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .info-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .info-card-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .info-card-value {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0e7490;
+    }
+    .muni-info-empty {
+      text-align: center; padding: 40px; color: #94a3b8; font-size: 0.9rem;
+    }
+    .muni-info-source {
+      margin-top: 16px; font-size: 0.65rem; color: #94a3b8; text-align: center;
+    }
+    .muni-info-source a { color: #64748b; text-decoration: underline; }
+    @media (max-width: 700px) {
+      .muni-info-top { flex-direction: column; align-items: center; }
+      .muni-info-thumb { width: 100%; min-width: 0; height: auto; max-height: 200px; }
+    }
+
     /* ── Analyst rank cell backgrounds ──────────────────── */
     .rank-bg-green  { background: #dcfce7 !important; }
     .rank-bg-blue   { background: #eff6ff !important; }
@@ -549,6 +600,16 @@
       </div>
     </div>
 
+    <!-- ── Municipality info view ────────────────────── -->
+    <div id="info-view" style="display:none">
+      <div class="panel">
+        <div class="panel-header" id="info-panel-header">מידע כללי</div>
+        <div id="info-container">
+          <div class="muni-info-empty">בחר רשות להצגת מידע כללי</div>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Analyst panel ──────────────────────────────── -->
     <div id="analyst-panel" style="display:none">
       <div id="analyst-header">
@@ -605,6 +666,7 @@
   const report         = document.getElementById('report');
   const form2View      = document.getElementById('form2-view');
   const genericView    = document.getElementById('generic-view');
+  const infoView       = document.getElementById('info-view');
 
   let municipalities = [];
   let currentMuni    = null;
@@ -700,11 +762,91 @@
     placeholder.style.display = 'none';
     report.style.display = 'none';
     loading.style.display = 'block';
+    infoView.style.display = 'none';
     if (currentSheet === 'form2') {
       fetchForm2(currentMuni);
+    } else if (currentSheet === 'general_info') {
+      fetchMuniInfo(currentMuni);
     } else {
       fetchGenericSheet(currentSheet, currentMuni);
     }
+  }
+
+  /* ── Municipality info ─────────────────────────────────── */
+  function fetchMuniInfo(muni) {
+    document.getElementById('sheet-analysis-section').style.display = 'none';
+    fetch(`/api/municipality_info/${encodeURIComponent(muni)}`)
+      .then(r => r.json())
+      .then(data => {
+        loading.style.display = 'none';
+        form2View.style.display = 'none';
+        genericView.style.display = 'none';
+        infoView.style.display = '';
+        renderMuniInfo(data);
+        report.style.display = 'block';
+        document.getElementById('report-title-text').textContent =
+          `${muni} — מידע כללי`;
+        document.getElementById('report-subtitle').textContent = '';
+      })
+      .catch(() => {
+        loading.style.display = 'none';
+        placeholder.textContent = 'שגיאה בטעינת המידע';
+        placeholder.style.display = '';
+      });
+  }
+
+  function renderMuniInfo(data) {
+    const container = document.getElementById('info-container');
+    document.getElementById('info-panel-header').textContent =
+      `מידע כללי — ${data.municipality}`;
+
+    if (!data.found) {
+      container.innerHTML = '<div class="muni-info-empty">לא נמצא מידע עבור רשות זו</div>';
+      return;
+    }
+
+    // Preferred display order for info cards
+    const cardOrder = [
+      'סוג רשות', 'מחוז', 'אוכלוסייה', 'שנת נתוני אוכלוסייה',
+      'שטח (קמ"ר)', 'צפיפות (נפשות/קמ"ר)', 'ראש הרשות',
+      'אשכול חברתי-כלכלי', 'שנת הקמה', 'סמל רשות'
+    ];
+
+    let html = '<div class="muni-info-wrap">';
+
+    // Top section: thumbnail + extract
+    html += '<div class="muni-info-top">';
+    if (data.thumbnail) {
+      html += `<img class="muni-info-thumb" src="${data.thumbnail}" alt="${data.municipality}">`;
+    }
+    if (data.extract) {
+      html += `<div class="muni-info-extract">${data.extract}</div>`;
+    }
+    html += '</div>';
+
+    // Info cards
+    const info = data.info || {};
+    const keys = cardOrder.filter(k => info[k]);
+    // Add any remaining keys not in the preferred order
+    Object.keys(info).forEach(k => { if (!keys.includes(k)) keys.push(k); });
+
+    if (keys.length) {
+      html += '<div class="muni-info-cards">';
+      keys.forEach(k => {
+        html += `<div class="info-card">`;
+        html += `<div class="info-card-label">${k}</div>`;
+        html += `<div class="info-card-value">${info[k]}</div>`;
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    // Source link
+    const wikiTitle = data.wiki_title || data.municipality;
+    html += `<div class="muni-info-source">מקור: <a href="https://he.wikipedia.org/wiki/${encodeURIComponent(wikiTitle)}" target="_blank">ויקיפדיה העברית</a></div>`;
+
+    html += '</div>';
+    container.innerHTML = html;
   }
 
   /* ── Form2 ────────────────────────────────────────────── */
@@ -717,6 +859,7 @@
         loading.style.display = 'none';
         form2View.style.display = '';
         genericView.style.display = 'none';
+        infoView.style.display = 'none';
         renderReport(data);
         report.style.display = 'block';
       })
@@ -737,6 +880,7 @@
         loading.style.display = 'none';
         form2View.style.display = 'none';
         genericView.style.display = '';
+        infoView.style.display = 'none';
         renderGenericSheet(data);
         report.style.display = 'block';
         // Sheet-specific analyst breakdown (only if analyst panel is open)

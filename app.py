@@ -956,7 +956,7 @@ def _fetch_wikipedia(municipality):
     search_resp = http_requests.get(base, params={
         'action': 'query', 'list': 'search',
         'srsearch': municipality, 'srlimit': 3, 'format': 'json',
-    }, timeout=8)
+    }, timeout=5)
     search_data = search_resp.json()
     results = search_data.get('query', {}).get('search', [])
     if not results:
@@ -975,7 +975,7 @@ def _fetch_wikipedia(municipality):
         'prop': 'extracts|pageimages', 'exintro': '1', 'explaintext': '1',
         'piprop': 'thumbnail', 'pithumbsize': 300,
         'format': 'json',
-    }, timeout=8)
+    }, timeout=5)
     pages = extract_resp.json().get('query', {}).get('pages', {})
     page = next(iter(pages.values()), {})
     extract = page.get('extract', '')
@@ -989,7 +989,7 @@ def _fetch_wikipedia(municipality):
     parse_resp = http_requests.get(base, params={
         'action': 'parse', 'page': title,
         'prop': 'wikitext', 'section': 0, 'format': 'json',
-    }, timeout=8)
+    }, timeout=5)
     wikitext = parse_resp.json().get('parse', {}).get('wikitext', {}).get('*', '')
 
     # Parse infobox fields
@@ -1022,7 +1022,7 @@ def _fetch_wikipedia(municipality):
         'action': 'query', 'titles': title,
         'prop': 'revisions', 'rvprop': 'timestamp', 'rvlimit': 1,
         'format': 'json',
-    }, timeout=8)
+    }, timeout=5)
     rev_pages = revisions_resp.json().get('query', {}).get('pages', {})
     rev_page = next(iter(rev_pages.values()), {})
     revisions = rev_page.get('revisions', [])
@@ -1091,7 +1091,7 @@ def _discover_mabat_api():
     for pattern in _MABAT_PATTERNS:
         url = pattern.format(code=test_code)
         try:
-            resp = http_requests.get(url, headers=_MABAT_HEADERS, timeout=6)
+            resp = http_requests.get(url, headers=_MABAT_HEADERS, timeout=2)
             if resp.status_code == 200:
                 data = resp.json()
                 if data and isinstance(data, (dict, list)):
@@ -1105,14 +1105,27 @@ def _discover_mabat_api():
     return ''
 
 
+# Run discovery in background thread at startup
+import threading
+
+def _bg_discover():
+    try:
+        _discover_mabat_api()
+    except Exception:
+        pass
+
+threading.Thread(target=_bg_discover, daemon=True).start()
+
+
 def _fetch_mabat_pnim(municipality_code):
     """Fetch municipality data from Mabat-Pnim portal."""
-    pattern = _discover_mabat_api()
-    if not pattern:
-        return None
-    url = pattern.format(code=municipality_code)
+    if _mabat_api_base is None:
+        return None  # Still discovering, skip for now
+    if not _mabat_api_base:
+        return None  # No working pattern
+    url = _mabat_api_base.format(code=municipality_code)
     try:
-        resp = http_requests.get(url, headers=_MABAT_HEADERS, timeout=8)
+        resp = http_requests.get(url, headers=_MABAT_HEADERS, timeout=4)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -1190,7 +1203,7 @@ def _fetch_datagov_city(municipality_code):
         url = (f'https://data.gov.il/api/3/action/datastore_search'
                f'?resource_id={_DATAGOV_CITIES_RESOURCE}'
                f'&q={municipality_code}&limit=5')
-        resp = http_requests.get(url, timeout=8, headers={
+        resp = http_requests.get(url, timeout=5, headers={
             'User-Agent': 'Mozilla/5.0',
         })
         if resp.status_code == 200:
@@ -1420,7 +1433,7 @@ def get_municipality_info(municipality):
     result = {
         'municipality': municipality,
         'muni_code': muni_code,
-        'found': wiki_data is not None or bool(gov_info),
+        'found': wiki_data is not None or bool(gov_info) or bool(financial),
         'wiki_title': wiki_data['title'] if wiki_data else None,
         'extract': wiki_data['extract'] if wiki_data else '',
         'wiki_info': wiki_items,
